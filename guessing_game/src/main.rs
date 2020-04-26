@@ -24,7 +24,7 @@ fn get_guess() -> u8 {
             Err(_) => {
                 println!("\"{}\" is not a valid 8-bit integer - please try again!", guess_string);
                 continue;
-            },
+            }
         };
     }
 }
@@ -49,8 +49,7 @@ fn main() {
             Ordering::Equal => {
                 println!("Your guess was exactly right, you win!");
                 break;
-            },
+            }
         }
     }
-
 }
