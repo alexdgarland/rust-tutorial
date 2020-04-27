@@ -1,7 +1,5 @@
-mod user;
+mod rectangle;
 
 fn main() {
-
-    user::demo_user();
-
+    rectangle::demo_rectangle();
 }
