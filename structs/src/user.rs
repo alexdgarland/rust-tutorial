@@ -1,10 +1,10 @@
 use std::fmt;
 
-pub struct User {
-    pub username: String,
-    pub email: String,
-    pub sign_in_count: u64,
-    pub active: bool,
+struct User {
+    username: String,
+    email: String,
+    sign_in_count: u64,
+    active: bool,
 }
 
 impl fmt::Display for User {
@@ -20,11 +20,35 @@ impl fmt::Display for User {
     }
 }
 
-pub fn build_user(username: String, email: String) -> User {
+fn build_user(username: String, email: String) -> User {
     User {
         username,
         email,
         active: true,
         sign_in_count: 1,
     }
+}
+
+pub fn demo_user() {
+
+    let mut user = build_user(
+        String::from("someone@example.com"),
+        String::from("someone"),
+    );
+
+    println!("{}", user);
+
+    println!("Updating user email address...\n");
+    user.email = String::from("my_new_email@example.com");
+
+    println!("{}", user);
+
+    println!("Creating new user with some properties same as old user.");
+    let user2 = User {
+        username: String::from("newuser"),
+        email: String::from("newuser@example.com"),
+        ..user
+    };
+    println!("{}", user2);
+
 }
