@@ -1,5 +1,6 @@
-use super::retrieve as im;
+use super::retrieve;
 use super::create;
+use super::modify;
 
 struct DemoExample {
     description: &'static str,
@@ -22,7 +23,11 @@ pub fn demo_vectors() {
         },
         DemoExample {
             description: "retrieval of vector elements",
-            function: im::read_vector_elements,
+            function: retrieve::read_vector_elements,
+        },
+        DemoExample {
+            description: "modification of vectors",
+            function: modify::show_modified_vectors
         }
     ];
 
