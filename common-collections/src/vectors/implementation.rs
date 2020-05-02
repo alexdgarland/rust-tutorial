@@ -20,40 +20,44 @@ pub fn show_created_vectors() {
     }
 }
 
-fn reader(vector: &Vec<i32>) -> Box<dyn Fn(usize) -> ()> {
+fn create_reader(vector: &Vec<i32>, retriever: fn(&Vec<i32>, usize) -> ()) -> Box<dyn Fn(usize) -> ()> {
     let vc = vector.clone();
-    let reader = move |index: usize|
-        match panic::catch_unwind(|| vc[index]) {
-            Ok(element) => println!("Element {} is {}.", index, element),
-            Err(_) => println!("There was an error trying to retrieve element {}.", index)
-        };
+    let reader = move |index: usize| retriever(&vc, index);
     return Box::new(reader);
 }
 
+fn reader(vector: &Vec<i32>) -> Box<dyn Fn(usize) -> ()> {
+    let retrieve = |vector: &Vec<i32>, index: usize| {
+        match panic::catch_unwind(|| vector[index]) {
+            Ok(element) => println!("Element {} is {}.", index, element),
+            Err(_) => println!("There was an error trying to retrieve element {}.", index)
+        };
+    };
+
+    return create_reader(&vector, retrieve);
+}
+
 fn optional_reader(vector: &Vec<i32>) -> Box<dyn Fn(usize) -> ()> {
-    let vc = vector.clone();
-    let reader = move |index: usize|
-        match vc.get(index) {
+    let retrieve = |vector: &Vec<i32>, index: usize| {
+        match vector.get(index) {
             Some(element) => println!("Element {} is {}.", index, element),
             None => println!("There is no element {}.", index)
         };
-    return Box::new(reader);
+    };
+
+    return create_reader(&vector, retrieve);
 }
 
 pub fn read_vector_elements() {
     let v = vec![1, 2, 3, 4, 5];
     println!("The vector is {:?}.", v);
 
-    let announce = |description: &str|
-        println!("*** Retrieving using {} index retrieval ***", description);
+    fn run_reader_demo(description: &str, reader: Box<dyn Fn(usize) -> ()>) {
+        println!("\n*** Retrieving using {} index retrieval ***\n", description);
+        reader(2);
+        reader(5);
+    }
 
-    announce("straightforward");
-    let read_element = reader(&v);
-    read_element(2);
-    read_element(5);
-
-    announce("optional");
-    let read_optional_element = optional_reader(&v);
-    read_optional_element(2);
-    read_optional_element(5);
+    run_reader_demo("straightforward", reader(&v));
+    run_reader_demo("optional", optional_reader(&v));
 }
