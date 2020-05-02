@@ -1,6 +1,7 @@
 use super::retrieve;
 use super::create;
 use super::modify;
+use super::spreadsheet;
 
 struct DemoExample {
     description: &'static str,
@@ -28,6 +29,10 @@ pub fn demo_vectors() {
         DemoExample {
             description: "modification of vectors",
             function: modify::show_modified_vectors
+        },
+        DemoExample {
+            description: "using vector of enums to model a spreadsheet",
+            function: spreadsheet::show_spreadsheet_operations
         }
     ];
 
