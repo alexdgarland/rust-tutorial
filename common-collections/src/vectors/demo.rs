@@ -1,4 +1,5 @@
-use super::implementation as im;
+use super::retrieve as im;
+use super::create;
 
 struct DemoExample {
     description: &'static str,
@@ -17,7 +18,7 @@ pub fn demo_vectors() {
     let examples = [
         DemoExample {
             description: "creation of vectors",
-            function: im::show_created_vectors,
+            function: create::show_created_vectors,
         },
         DemoExample {
             description: "retrieval of vector elements",
