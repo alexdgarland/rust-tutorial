@@ -1,4 +1,3 @@
-
 fn create_vectors() -> [Vec<i32>; 3] {
     let v1: Vec<i32> = Vec::new();
 

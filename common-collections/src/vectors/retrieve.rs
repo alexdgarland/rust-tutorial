@@ -1,6 +1,6 @@
 use std::panic;
 
-fn retrieve(vector: &Vec<i32>, index: usize)  {
+fn retrieve(vector: &Vec<i32>, index: usize) {
     match panic::catch_unwind(|| vector[index]) {
         Ok(element) => println!("Element {} is {}.", index, element),
         Err(_) => println!("There was an error trying to retrieve element {}.", index)

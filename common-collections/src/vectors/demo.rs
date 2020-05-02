@@ -28,11 +28,11 @@ pub fn demo_vectors() {
         },
         DemoExample {
             description: "modification of vectors",
-            function: modify::show_modified_vectors
+            function: modify::show_modified_vectors,
         },
         DemoExample {
             description: "using vector of enums to model a spreadsheet",
-            function: spreadsheet::show_spreadsheet_operations
+            function: spreadsheet::show_spreadsheet_operations,
         }
     ];
 
