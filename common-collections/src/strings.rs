@@ -27,7 +27,7 @@ fn show_string_char_byte_details(string: &String) {
     };
 }
 
-fn main() {
+pub fn demo_strings() {
     for s in get_demo_strings().iter() {
         show_string_char_byte_details(s);
     }
