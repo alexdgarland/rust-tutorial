@@ -11,7 +11,8 @@ fn main() {
     let dispatch_map = DispatchMap::create(
         vec![
             ("vectors", vectors::demo_vectors),
-            ("strings", strings::demo_strings)
+            ("strings", strings::demo_strings),
+            ("intlist", exercises::demo_int_list)
         ]
     );
 
