@@ -3,6 +3,7 @@ use std::env;
 mod vectors;
 mod strings;
 mod dispatch;
+mod exercises;
 
 use dispatch::DispatchMap;
 
@@ -14,7 +15,8 @@ fn main() {
         ]
     );
 
-    let method_name = env::args().collect().get(1);
+    let args: Vec<String> = env::args().collect();
+    let method_name = args.get(1);
 
     dispatch_map.execute(&method_name);
 }
