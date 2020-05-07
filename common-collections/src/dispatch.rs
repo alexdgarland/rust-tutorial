@@ -32,16 +32,28 @@ impl DispatchMap {
         DispatchMap { map }
     }
 
+    fn help(&self) {
+        println!("Common Collections Tutorial Code\n");
+        println!("Valid methods are: {:?}\n", self.map.keys());
+        println!(" - Call with one arg to run a specific named method");
+        println!(" - Call without args to run all available methods");
+        println!(" - Call with one arg \"help\" to show this usage info\n");
+    }
+
     fn run_named_method(&self, method_name: &String) {
-        match self.map.get(&method_name[..]) {
-            Some(method) => {
-                method.run();
-            }
-            None => {
-                let message = format!(
-                    "Method {} not found, valid methods are {:?}", method_name, self.map.keys()
-                );
-                log_string(message);
+        if method_name == "help" {
+            log("Showing help");
+            self.help();
+        }
+        else {
+            match self.map.get(&method_name[..]) {
+                Some(method) => {
+                    method.run();
+                }
+                None => {
+                    log_string(format!("Method \"{}\" not found", method_name));
+                    self.help();
+                }
             }
         };
     }
