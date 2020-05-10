@@ -18,18 +18,18 @@ impl Method {
     }
 }
 
-pub struct DispatchMap {
+pub struct Dispatcher {
     map: HashMap<&'static str, Method>
 }
 
-impl DispatchMap {
+impl Dispatcher {
 
-    pub fn create(method_details: Vec<(&'static str, fn() -> ())>) -> DispatchMap {
+    pub fn create(method_details: Vec<(&'static str, fn() -> ())>) -> Dispatcher {
         let mut map: HashMap<&str, Method> = HashMap::new();
         for (name, callable) in method_details {
             map.insert(name, Method { name, callable });
         }
-        DispatchMap { map }
+        Dispatcher { map }
     }
 
     fn help(&self) {

@@ -5,10 +5,10 @@ mod strings;
 mod dispatch;
 mod exercises;
 
-use dispatch::DispatchMap;
+use dispatch::Dispatcher;
 
 fn main() {
-    let dispatch_map = DispatchMap::create(
+    let dispatcher = Dispatcher::create(
         vec![
             ("vectors", vectors::demo_vectors),
             ("strings", strings::demo_strings),
@@ -19,5 +19,5 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let method_name = args.get(1);
 
-    dispatch_map.execute(&method_name);
+    dispatcher.execute(&method_name);
 }
