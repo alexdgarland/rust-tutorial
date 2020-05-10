@@ -12,7 +12,8 @@ fn main() {
         vec![
             ("vectors", vectors::demo_vectors),
             ("strings", strings::demo_strings),
-            ("intlist", exercises::demo_int_list)
+            ("intlist", exercises::demo_int_list),
+            ("piglatin", exercises::demo_pig_latin)
         ]
     );
 
