@@ -1,6 +1,6 @@
 mod int_list_stats;
 mod pig_latin;
-mod employee_store;
+mod employee_management;
 
 use int_list_stats::IntList;
 pub use pig_latin::demo::demo_pig_latin;

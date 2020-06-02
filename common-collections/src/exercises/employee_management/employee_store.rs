@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
+use mockall_derive::automock;
+
 #[derive(Eq, PartialEq, Ord, PartialOrd, Debug)]
-struct DepartmentInfo {
+pub struct DepartmentInfo {
     department: String,
     employee_names: Vec<String>,
 }
@@ -16,15 +18,22 @@ impl DepartmentInfo {
     }
 }
 
-struct EmployeeStore {
+#[automock]
+pub trait EmployeeStore {
+
+    fn add_employee(&mut self, employee_name: String, department: String);
+
+    fn retrieve_employees_by_department(&self, department: String) -> Option<Vec<String>>;
+
+    fn retrieve_all_employees(&self) -> Vec<DepartmentInfo>;
+}
+
+
+pub struct EmployeeStoreImpl {
     map: HashMap<String, Vec<String>>
 }
 
-impl EmployeeStore {
-    fn create() -> EmployeeStore {
-        let map = HashMap::new();
-        EmployeeStore { map }
-    }
+impl EmployeeStore for EmployeeStoreImpl {
 
     fn add_employee(&mut self, employee_name: String, department: String) {
         let department_employees = self.map
@@ -34,8 +43,8 @@ impl EmployeeStore {
         department_employees.sort_unstable();
     }
 
-    fn retrieve_employees_by_department(&self, department: String) -> Option<&Vec<String>> {
-        self.map.get(&department)
+    fn retrieve_employees_by_department(&self, department: String) -> Option<Vec<String>> {
+        self.map.get(&department).map(|names| names.clone())
     }
 
     fn retrieve_all_employees(&self) -> Vec<DepartmentInfo> {
@@ -48,10 +57,21 @@ impl EmployeeStore {
     }
 }
 
+fn create_employee_store_impl() -> EmployeeStoreImpl {
+    let map = HashMap::new();
+    EmployeeStoreImpl { map }
+}
+
+pub fn create_employee_store() -> Box<dyn EmployeeStore> {
+    Box::new(create_employee_store_impl())
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::exercises::employee_store::{EmployeeStore, DepartmentInfo};
     use std::collections::HashMap;
+
+    use super::{DepartmentInfo, EmployeeStore, EmployeeStoreImpl};
+    use super::create_employee_store_impl;
 
     fn get_department_one() -> String { String::from("Pie Quality Control") }
 
@@ -65,14 +85,14 @@ mod tests {
 
     #[test]
     fn test_add_employee_to_new_department() {
-        let mut store = EmployeeStore::create();
+        let mut store = create_employee_store_impl();
         store.add_employee(get_name_one(), get_department_one());
         assert_eq!(store.map.get(&get_department_one()), Some(&vec![get_name_one()]));
     }
 
     #[test]
     fn test_add_employee_to_existing_department() {
-        let mut store = EmployeeStore::create();
+        let mut store = create_employee_store_impl();
         store.add_employee(get_name_one(), get_department_one());
         store.add_employee(get_name_two(), get_department_one());
         assert_eq!(
@@ -83,7 +103,7 @@ mod tests {
 
     #[test]
     fn test_add_employee_to_existing_department_maintains_sort_order() {
-        let mut store = EmployeeStore::create();
+        let mut store = create_employee_store_impl();
         store.add_employee(get_name_two(), get_department_one());
         store.add_employee(get_name_one(), get_department_one());
         assert_eq!(
@@ -94,7 +114,7 @@ mod tests {
 
     #[test]
     fn test_retrieve_employees_for_missing_department_returns_none() {
-        let store = EmployeeStore::create();
+        let store = create_employee_store_impl();
         assert_eq!(store.retrieve_employees_by_department(get_department_one()), None);
     }
 
@@ -103,14 +123,14 @@ mod tests {
         let employees = vec![get_name_one(), get_name_two()];
         let mut map = HashMap::new();
         map.insert(get_department_one(), employees.clone());
-        let store = EmployeeStore { map };
-        let expected = Some(&employees);
+        let store = EmployeeStoreImpl { map };
+        let expected = Some(employees);
         assert_eq!(store.retrieve_employees_by_department(get_department_one()), expected);
     }
 
     #[test]
     fn test_retrieve_all_employees_for_new_store_returns_empty_vector() {
-        let store = EmployeeStore::create();
+        let store = create_employee_store_impl();
         let expected: Vec<DepartmentInfo> = vec![];
         assert_eq!(store.retrieve_all_employees(), expected);
     }
@@ -120,7 +140,7 @@ mod tests {
         let mut map = HashMap::new();
         map.insert(get_department_two(), vec![get_name_three()]);
         map.insert(get_department_one(), vec![get_name_one(), get_name_two()]);
-        let store = EmployeeStore { map };
+        let store = EmployeeStoreImpl { map };
         let expected = vec![
             DepartmentInfo {
                 department: get_department_one(),
