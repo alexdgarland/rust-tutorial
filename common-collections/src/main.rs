@@ -1,13 +1,20 @@
+#[macro_use]
+extern crate log;
+extern crate simple_logger;
+extern crate testing_logger;
+
 use std::env;
+
+use dispatch::Dispatcher;
 
 mod vectors;
 mod strings;
 mod dispatch;
 mod exercises;
 
-use dispatch::Dispatcher;
-
 fn main() {
+    simple_logger::init();
+
     let dispatcher = Dispatcher::create(
         vec![
             ("vectors", vectors::demo_vectors),

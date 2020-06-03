@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use mockall_derive::automock;
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Debug, Clone)]
 pub struct DepartmentInfo {
-    department: String,
-    employee_names: Vec<String>,
+    pub department: String,
+    pub employee_names: Vec<String>,
 }
 
 impl DepartmentInfo {
@@ -27,7 +27,6 @@ pub trait EmployeeStore {
 
     fn retrieve_all_employees(&self) -> Vec<DepartmentInfo>;
 }
-
 
 pub struct EmployeeStoreImpl {
     map: HashMap<String, Vec<String>>
@@ -64,6 +63,12 @@ fn create_employee_store_impl() -> EmployeeStoreImpl {
 
 pub fn create_employee_store() -> Box<dyn EmployeeStore> {
     Box::new(create_employee_store_impl())
+}
+
+pub(crate) fn setup_mock(setup_behaviour: fn(&mut MockEmployeeStore) -> ()) -> Box<dyn EmployeeStore> {
+    let mut raw_mock_store = MockEmployeeStore::new();
+    setup_behaviour(&mut raw_mock_store);
+    Box::new(raw_mock_store)
 }
 
 #[cfg(test)]
