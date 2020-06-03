@@ -21,9 +21,9 @@ impl DepartmentInfo {
 #[automock]
 pub trait EmployeeStore {
 
-    fn add_employee(&mut self, employee_name: String, department: String);
+    fn add_employee(&mut self, employee_name: &String, department: &String);
 
-    fn retrieve_employees_by_department(&self, department: String) -> Option<Vec<String>>;
+    fn retrieve_employees_by_department(&self, department: &String) -> Option<Vec<String>>;
 
     fn retrieve_all_employees(&self) -> Vec<DepartmentInfo>;
 }
@@ -34,16 +34,16 @@ pub struct EmployeeStoreImpl {
 
 impl EmployeeStore for EmployeeStoreImpl {
 
-    fn add_employee(&mut self, employee_name: String, department: String) {
+    fn add_employee(&mut self, employee_name: &String, department: &String) {
         let department_employees = self.map
-            .entry(department)
+            .entry(department.clone())
             .or_insert(vec![]);
-        department_employees.push(employee_name);
+        department_employees.push(employee_name.clone());
         department_employees.sort_unstable();
     }
 
-    fn retrieve_employees_by_department(&self, department: String) -> Option<Vec<String>> {
-        self.map.get(&department).map(|names| names.clone())
+    fn retrieve_employees_by_department(&self, department: &String) -> Option<Vec<String>> {
+        self.map.get(department).map(|names| names.clone())
     }
 
     fn retrieve_all_employees(&self) -> Vec<DepartmentInfo> {
@@ -91,15 +91,15 @@ mod tests {
     #[test]
     fn test_add_employee_to_new_department() {
         let mut store = create_employee_store_impl();
-        store.add_employee(get_name_one(), get_department_one());
+        store.add_employee(&get_name_one(), &get_department_one());
         assert_eq!(store.map.get(&get_department_one()), Some(&vec![get_name_one()]));
     }
 
     #[test]
     fn test_add_employee_to_existing_department() {
         let mut store = create_employee_store_impl();
-        store.add_employee(get_name_one(), get_department_one());
-        store.add_employee(get_name_two(), get_department_one());
+        store.add_employee(&get_name_one(), &get_department_one());
+        store.add_employee(&get_name_two(), &get_department_one());
         assert_eq!(
             store.map.get(&get_department_one()),
             Some(&vec![get_name_one(), get_name_two()])
@@ -109,8 +109,8 @@ mod tests {
     #[test]
     fn test_add_employee_to_existing_department_maintains_sort_order() {
         let mut store = create_employee_store_impl();
-        store.add_employee(get_name_two(), get_department_one());
-        store.add_employee(get_name_one(), get_department_one());
+        store.add_employee(&get_name_two(), &get_department_one());
+        store.add_employee(&get_name_one(), &get_department_one());
         assert_eq!(
             store.map.get(&get_department_one()),
             Some(&vec![get_name_one(), get_name_two()])
@@ -120,7 +120,7 @@ mod tests {
     #[test]
     fn test_retrieve_employees_for_missing_department_returns_none() {
         let store = create_employee_store_impl();
-        assert_eq!(store.retrieve_employees_by_department(get_department_one()), None);
+        assert_eq!(store.retrieve_employees_by_department(&get_department_one()), None);
     }
 
     #[test]
@@ -130,7 +130,7 @@ mod tests {
         map.insert(get_department_one(), employees.clone());
         let store = EmployeeStoreImpl { map };
         let expected = Some(employees);
-        assert_eq!(store.retrieve_employees_by_department(get_department_one()), expected);
+        assert_eq!(store.retrieve_employees_by_department(&get_department_one()), expected);
     }
 
     #[test]

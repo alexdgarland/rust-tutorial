@@ -28,7 +28,7 @@ impl TextCommandExecutor for AddEmployeeTextCommandExecutor<'_> {
         {
             Some((Some(employee_name), Some(department))) => {
                 info!("Adding employee {} to department {}", employee_name, department);
-                self.employee_store.add_employee(employee_name, department);
+                self.employee_store.add_employee(&employee_name, &department);
                 Ok(())
             }
             _ =>
@@ -83,10 +83,8 @@ mod tests {
                     .times(0)
                     .return_const(());
             });
-        
-        let mut executor = AddEmployeeTextCommandExecutor {
-            employee_store: &mut mock_store
-        };
+
+        let mut executor = AddEmployeeTextCommandExecutor { employee_store: &mut mock_store };
 
         let command = String::from("This is not an add command!");
 
