@@ -4,7 +4,7 @@ use super::TextCommandExecutor;
 static NON_MATCH_ERROR: Result<(), &str> = Err("Text command did not match pattern to retrieve all departments");
 
 pub struct RetrieveAllTextCommandExecutor<'a> {
-    employee_store: &'a mut Box<dyn EmployeeStore>
+    pub employee_store: &'a mut Box<dyn EmployeeStore>
 }
 
 impl TextCommandExecutor for RetrieveAllTextCommandExecutor<'_> {

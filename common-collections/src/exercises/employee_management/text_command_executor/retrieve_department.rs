@@ -9,7 +9,7 @@ use super::TextCommandExecutor;
 static NON_MATCH_ERROR: Result<(), &str> = Err("Text command did not match pattern to retrieve employees by department");
 
 pub struct RetrieveDepartmentTextCommandExecutor<'a> {
-    employee_store: &'a mut Box<dyn EmployeeStore>
+    pub employee_store: &'a mut Box<dyn EmployeeStore>
 }
 
 impl TextCommandExecutor for RetrieveDepartmentTextCommandExecutor<'_> {

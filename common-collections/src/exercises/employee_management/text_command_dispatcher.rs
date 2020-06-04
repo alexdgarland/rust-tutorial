@@ -18,6 +18,7 @@ impl TextCommandDispatcher {
         }
         NO_MATCHES_ERROR
     }
+
 }
 
 #[cfg(test)]
