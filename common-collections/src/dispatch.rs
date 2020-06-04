@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 fn log(message: &str) {
-    println!("\n***** DISPATCH - {} *****\n", message);
+    info!(target:"APPLICATION DISPATCH", "{}", message);
 }
 
 fn log_string(message: String) { log(&message[..]); }
@@ -13,7 +13,7 @@ struct Method {
 
 impl Method {
     fn run(&self) {
-        log_string(format!("Running method \"{}\"", self.name));
+        log_string(format!("Running top-level demo method \"{}\"", self.name));
         (self.callable)();
     }
 }

@@ -35,13 +35,10 @@ pub mod demo {
     }
 
     fn demo_words() {
-        println!("Words:");
-
+        info!("Showing words");
         for word in strings_from(vec!["first", "apple"]) {
             show(&word, &pig_latinise(&word));
         }
-
-        println!();
     }
 
     fn format_greeting(words: Vec<String>) -> String {
@@ -50,18 +47,14 @@ pub mod demo {
     }
 
     fn demo_greeting_phrase() {
-        println!("Phrase:");
-
+        info!("Showing phrases");
         let english_words = strings_from(vec!["hello", "world"]);
         let piglatin_words: Vec<String> = english_words.iter().map(pig_latinise).collect();
-
         show(&format_greeting(english_words), &format_greeting(piglatin_words));
-
-        println!();
     }
 
     pub fn demo_pig_latin() {
-        println!("*** Showing Pig Latin examples ***\n");
+        info!("Showing Pig Latin examples");
         demo_words();
         demo_greeting_phrase();
     }

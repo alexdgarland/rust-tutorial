@@ -10,9 +10,8 @@ struct DemoExample {
 
 impl DemoExample {
     fn run(&self) {
-        println!("**** Demoing {} ****\n", self.description);
+        info!("Demoing {}", self.description);
         (self.function)();
-        println!();
     }
 }
 

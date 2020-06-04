@@ -3,7 +3,7 @@ mod model;
 use model::{Spreadsheet, SpreadsheetRow, SpreadsheetCell};
 
 fn show_sheet(description: &str, sheet: &Spreadsheet) {
-    println!("*** Showing contents of {} spreadsheet model ***", description);
+    info!("Showing contents of {} spreadsheet model", description);
     println!("{}", sheet);
 }
 

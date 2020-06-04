@@ -1,7 +1,10 @@
 use std::fmt::{Formatter, Display, Result};
 
 fn display_elements<T: Display>(f: &mut Formatter<'_>, elements: &Vec<T>, sep: &str) -> Result {
-    let elems_as_strings: Vec<String> = elements.iter().map(|e| format!("{}", e)).collect();
+    let elems_as_strings: Vec<String> = elements
+        .iter()
+        .map(|e| format!("{}", e))
+        .collect();
     write!(f, "{}{}{}", sep, elems_as_strings.join(sep), sep)
 }
 

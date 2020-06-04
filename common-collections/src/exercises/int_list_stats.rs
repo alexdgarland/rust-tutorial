@@ -56,7 +56,7 @@ impl Display for IntList {
         }
 
         write!(
-            f, "IntList: {:?}\nMean: {}, median: {}, mode: {}\n",
+            f, "Integer List: {:?}\nStatistics - mean: {}, median: {}, mode: {}",
             self.list,
             show_optional(self.mean()),
             show_optional(self.median()),

@@ -1,5 +1,5 @@
 fn show_vector(type_description: &str, vector: &Vec<i32>) {
-    println!("{} vector is - {:?}.", type_description, vector);
+    info!("{} vector is - {:?}", type_description, vector);
 }
 
 pub fn show_modified_vectors() {

@@ -14,6 +14,6 @@ fn create_vectors() -> [Vec<i32>; 3] {
 
 pub fn show_created_vectors() {
     for v in create_vectors().iter() {
-        println!("{:?}", v);
+        info!("Created vector - {:?}", v);
     }
 }
