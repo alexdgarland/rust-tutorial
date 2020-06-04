@@ -20,7 +20,6 @@ impl DepartmentInfo {
 
 #[automock]
 pub trait EmployeeStore {
-
     fn add_employee(&mut self, employee_name: &String, department: &String);
 
     fn retrieve_employees_by_department(&self, department: &String) -> Option<Vec<String>>;
@@ -33,7 +32,6 @@ pub struct EmployeeStoreImpl {
 }
 
 impl EmployeeStore for EmployeeStoreImpl {
-
     fn add_employee(&mut self, employee_name: &String, department: &String) {
         let department_employees = self.map
             .entry(department.clone())
@@ -57,8 +55,7 @@ impl EmployeeStore for EmployeeStoreImpl {
 }
 
 fn create_employee_store_impl() -> EmployeeStoreImpl {
-    let map = HashMap::new();
-    EmployeeStoreImpl { map }
+    EmployeeStoreImpl { map: HashMap::new() }
 }
 
 pub fn create_employee_store() -> Box<dyn EmployeeStore> {
