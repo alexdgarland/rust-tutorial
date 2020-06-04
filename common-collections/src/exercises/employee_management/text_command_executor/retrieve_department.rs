@@ -1,15 +1,19 @@
-use regex::{Captures, Regex};
+use regex::Regex;
+
 use lazy_static::lazy_static;
 
 use crate::exercises::employee_management::employee_store::EmployeeStore;
+
 use super::TextCommandExecutor;
 
-struct RetrieveDepartmentTextCommandExecutor<'a> {
+static NON_MATCH_ERROR: Result<(), &str> = Err("Text command did not match pattern to retrieve employees by department");
+
+pub struct RetrieveDepartmentTextCommandExecutor<'a> {
     employee_store: &'a mut Box<dyn EmployeeStore>
 }
 
 impl TextCommandExecutor for RetrieveDepartmentTextCommandExecutor<'_> {
-    fn try_execute(&mut self, command: &String) -> Result<(), String> {
+    fn try_execute(&mut self, command: &String) -> Result<(), &str> {
         lazy_static! {
             static ref RETRIEVE_DEPARTMENT_REGEX: Regex =
                 Regex::new(r"^Retrieve department (?P<department>.*)$").unwrap();
@@ -29,7 +33,8 @@ impl TextCommandExecutor for RetrieveDepartmentTextCommandExecutor<'_> {
                 }
                 Ok(())
             }
-            None => Err("Text command did not match pattern to retrieve employees by department".to_string())
+            None =>
+                NON_MATCH_ERROR
         }
 
     }
@@ -37,12 +42,14 @@ impl TextCommandExecutor for RetrieveDepartmentTextCommandExecutor<'_> {
 
 #[cfg(test)]
 mod tests {
-    use mockall::predicate::eq;
     use log::Level;
+    use mockall::predicate::eq;
 
     use crate::exercises::employee_management::employee_store;
-    use super::super::TextCommandExecutor;
+    use crate::exercises::employee_management::text_command_executor::retrieve_department::NON_MATCH_ERROR;
+
     use super::RetrieveDepartmentTextCommandExecutor;
+    use super::super::TextCommandExecutor;
 
     fn get_mock_return() -> Vec<String> {
         vec!["Bob Bobertson".to_string(), "Weebl Bull".to_string()]
@@ -118,8 +125,6 @@ mod tests {
 
         let command = String::from("This is not a command to retrieve by department!");
 
-        assert_eq!(executor.try_execute(&command),
-            Err("Text command did not match pattern to retrieve employees by department".to_string())
-        );
+        assert_eq!(executor.try_execute(&command), NON_MATCH_ERROR);
     }
 }

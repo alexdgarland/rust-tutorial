@@ -5,7 +5,7 @@ struct TextCommandDispatcher {
 }
 
 impl TextCommandDispatcher {
-    pub fn process(&mut self, text_command: String) -> Result<(), String> {
+    pub fn process(&mut self, text_command: &str) -> Result<(), &str> {
         Ok(())
         // TODO - Implement and test this method
         // PSEUDOCODE:
@@ -19,6 +19,12 @@ impl TextCommandDispatcher {
 }
 
 #[cfg(test)]
-mod text_command_tests {
+mod text_command_dispatcher_tests {
     use super::TextCommandDispatcher;
+
+    fn test_calls_one_executor_with_valid_command() {
+        let command = "Some command";
+        // TODO - implement this and other tests
+
+    }
 }

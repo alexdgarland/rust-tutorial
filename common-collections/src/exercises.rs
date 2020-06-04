@@ -4,6 +4,7 @@ mod employee_management;
 
 use int_list_stats::IntList;
 pub use pig_latin::demo::demo_pig_latin;
+pub use employee_management::demo_employee_management;
 
 pub fn demo_int_list() {
     info!("Showing populated int list");

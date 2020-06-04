@@ -4,12 +4,14 @@ use lazy_static::lazy_static;
 use crate::exercises::employee_management::employee_store::EmployeeStore;
 use super::TextCommandExecutor;
 
-struct AddEmployeeTextCommandExecutor<'a> {
-    employee_store: &'a mut Box<dyn EmployeeStore>
+static NON_MATCH_ERROR: Result<(), &str> = Err("Text command did not match pattern to add employee");
+
+pub struct AddEmployeeTextCommandExecutor<'a> {
+    pub employee_store: &'a mut Box<dyn EmployeeStore>
 }
 
 impl TextCommandExecutor for AddEmployeeTextCommandExecutor<'_> {
-    fn try_execute(&mut self, command: &String) -> Result<(), String> {
+    fn try_execute(&mut self, command: &String) -> Result<(), &str> {
         lazy_static! {
             static ref ADD_EMPLOYEE_REGEX: Regex =
                 Regex::new(r"^Add (?P<employee_name>.*) to (?P<department>.*)$").unwrap();
@@ -32,7 +34,7 @@ impl TextCommandExecutor for AddEmployeeTextCommandExecutor<'_> {
                 Ok(())
             }
             _ =>
-                Err(String::from("Text command did not match pattern to add employee"))
+                NON_MATCH_ERROR
         }
     }
 }
@@ -45,6 +47,7 @@ mod tests {
     use crate::exercises::employee_management::employee_store;
     use super::super::TextCommandExecutor;
     use super::AddEmployeeTextCommandExecutor;
+    use crate::exercises::employee_management::text_command_executor::add_employee::NON_MATCH_ERROR;
 
     #[test]
     fn test_add_command_ok_with_valid() {
@@ -63,7 +66,7 @@ mod tests {
 
         let mut executor = AddEmployeeTextCommandExecutor { employee_store: &mut mock_store };
 
-        let command = String::from("Add Bob Bobertson to Pie Quality Control");
+        let command = "Add Bob Bobertson to Pie Quality Control".to_string();
 
         assert_eq!(executor.try_execute(&command), Ok(()));
 
@@ -88,8 +91,6 @@ mod tests {
 
         let command = String::from("This is not an add command!");
 
-        assert_eq!(
-            executor.try_execute(&command), Err("Text command did not match pattern to add employee".to_string())
-        );
+        assert_eq!(executor.try_execute(&command), NON_MATCH_ERROR);
     }
 }

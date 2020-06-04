@@ -13,14 +13,15 @@ mod dispatch;
 mod exercises;
 
 fn main() {
-    simple_logger::init();
+    simple_logger::init().unwrap();
 
     let dispatcher = Dispatcher::create(
         vec![
             ("vectors", vectors::demo_vectors),
             ("strings", strings::demo_strings),
             ("intlist", exercises::demo_int_list),
-            ("piglatin", exercises::demo_pig_latin)
+            ("piglatin", exercises::demo_pig_latin),
+            ("employee", exercises::demo_employee_management),
         ]
     );
 

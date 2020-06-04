@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use mockall_derive::automock;
+use std::fmt::{Debug, Result, Formatter};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Debug, Clone)]
 pub struct DepartmentInfo {
@@ -25,8 +26,19 @@ pub trait EmployeeStore {
     fn retrieve_employees_by_department(&self, department: &String) -> Option<Vec<String>>;
 
     fn retrieve_all_employees(&self) -> Vec<DepartmentInfo>;
+
+    fn debug_string(&self) -> String;
 }
 
+impl Debug for dyn EmployeeStore {
+
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "{}", self.debug_string())
+    }
+
+}
+
+#[derive(Debug)]
 pub struct EmployeeStoreImpl {
     map: HashMap<String, Vec<String>>
 }
@@ -52,6 +64,11 @@ impl EmployeeStore for EmployeeStoreImpl {
         infos.sort_unstable();
         infos
     }
+
+    fn debug_string(&self) -> String {
+        format!("EmployeeStoreImpl using map {:?}", self.map)
+    }
+
 }
 
 fn create_employee_store_impl() -> EmployeeStoreImpl {
