@@ -11,7 +11,7 @@ pub struct AddEmployeeTextCommandExecutor<'a> {
 }
 
 impl TextCommandExecutor for AddEmployeeTextCommandExecutor<'_> {
-    fn try_execute(&mut self, command: &String) -> Result<(), &str> {
+    fn try_execute(&mut self, command: &str) -> Result<(), &'static str> {
         lazy_static! {
             static ref ADD_EMPLOYEE_REGEX: Regex =
                 Regex::new(r"^Add (?P<employee_name>.*) to (?P<department>.*)$").unwrap();

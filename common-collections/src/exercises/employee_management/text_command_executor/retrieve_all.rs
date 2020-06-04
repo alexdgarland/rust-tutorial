@@ -8,7 +8,7 @@ pub struct RetrieveAllTextCommandExecutor<'a> {
 }
 
 impl TextCommandExecutor for RetrieveAllTextCommandExecutor<'_> {
-    fn try_execute(&mut self, command: &String) -> Result<(), &str> {
+    fn try_execute(&mut self, command: &str) -> Result<(), &'static str> {
         if command == "Retrieve all departments" {
             info!("Retrieved full employee list:\n{:?}", self.employee_store.retrieve_all_employees());
             Ok(())

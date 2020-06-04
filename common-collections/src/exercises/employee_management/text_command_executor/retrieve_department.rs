@@ -13,7 +13,7 @@ pub struct RetrieveDepartmentTextCommandExecutor<'a> {
 }
 
 impl TextCommandExecutor for RetrieveDepartmentTextCommandExecutor<'_> {
-    fn try_execute(&mut self, command: &String) -> Result<(), &str> {
+    fn try_execute(&mut self, command: &str) -> Result<(), &'static str> {
         lazy_static! {
             static ref RETRIEVE_DEPARTMENT_REGEX: Regex =
                 Regex::new(r"^Retrieve department (?P<department>.*)$").unwrap();
