@@ -2,16 +2,16 @@ use regex::{Captures, Regex};
 use lazy_static::lazy_static;
 
 use crate::exercises::employee_management::employee_store::EmployeeStore;
-use super::TextCommandExecutor;
+use super::CommandExecutor;
 
 static NON_MATCH_ERROR: Result<(), &str> = Err("Text command did not match pattern to add employee");
 
-pub struct AddEmployeeTextCommandExecutor<'a> {
-    pub employee_store: &'a mut Box<dyn EmployeeStore>
-}
+pub struct AddEmployeeCommandExecutor { }
 
-impl TextCommandExecutor for AddEmployeeTextCommandExecutor<'_> {
-    fn try_execute(&mut self, command: &str) -> Result<(), &'static str> {
+impl CommandExecutor for AddEmployeeCommandExecutor {
+    fn try_execute<T: 'static + EmployeeStore>(&self, command: &str, employee_store: &mut T)
+        -> Result<(), &'static str>
+    {
         lazy_static! {
             static ref ADD_EMPLOYEE_REGEX: Regex =
                 Regex::new(r"^Add (?P<employee_name>.*) to (?P<department>.*)$").unwrap();
@@ -30,7 +30,7 @@ impl TextCommandExecutor for AddEmployeeTextCommandExecutor<'_> {
         {
             Some((Some(employee_name), Some(department))) => {
                 info!("Adding employee {} to department {}", employee_name, department);
-                self.employee_store.add_employee(&employee_name, &department);
+                employee_store.add_employee(&employee_name, &department);
                 Ok(())
             }
             _ =>
@@ -45,9 +45,9 @@ mod tests {
     use log::Level;
 
     use crate::exercises::employee_management::employee_store;
-    use super::super::TextCommandExecutor;
-    use super::AddEmployeeTextCommandExecutor;
-    use crate::exercises::employee_management::text_command_executor::add_employee::NON_MATCH_ERROR;
+    use super::super::CommandExecutor;
+    use super::AddEmployeeCommandExecutor;
+    use crate::exercises::employee_management::command_executor::add_employee::NON_MATCH_ERROR;
 
     #[test]
     fn test_add_command_ok_with_valid() {
@@ -64,11 +64,11 @@ mod tests {
                     ).return_const(());
             });
 
-        let mut executor = AddEmployeeTextCommandExecutor { employee_store: &mut mock_store };
+        let executor = AddEmployeeCommandExecutor { };
 
         let command = "Add Bob Bobertson to Pie Quality Control".to_string();
 
-        assert_eq!(executor.try_execute(&command), Ok(()));
+        assert_eq!(executor.try_execute(&command, &mut mock_store), Ok(()));
 
         testing_logger::validate(|captured_logs| {
             assert_eq!(captured_logs.len(), 1);
@@ -87,10 +87,10 @@ mod tests {
                     .return_const(());
             });
 
-        let mut executor = AddEmployeeTextCommandExecutor { employee_store: &mut mock_store };
+        let executor = AddEmployeeCommandExecutor { };
 
         let command = String::from("This is not an add command!");
 
-        assert_eq!(executor.try_execute(&command), NON_MATCH_ERROR);
+        assert_eq!(executor.try_execute(&command, &mut mock_store), NON_MATCH_ERROR);
     }
 }

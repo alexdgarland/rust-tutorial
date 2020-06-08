@@ -1,16 +1,16 @@
 use crate::exercises::employee_management::employee_store::EmployeeStore;
-use super::TextCommandExecutor;
+use super::CommandExecutor;
 
 static NON_MATCH_ERROR: Result<(), &str> = Err("Text command did not match pattern to retrieve all departments");
 
-pub struct RetrieveAllTextCommandExecutor<'a> {
-    pub employee_store: &'a mut Box<dyn EmployeeStore>
-}
+pub struct RetrieveAllCommandExecutor { }
 
-impl TextCommandExecutor for RetrieveAllTextCommandExecutor<'_> {
-    fn try_execute(&mut self, command: &str) -> Result<(), &'static str> {
+impl CommandExecutor for RetrieveAllCommandExecutor {
+    fn try_execute<T: 'static + EmployeeStore>(&self, command: &str, employee_store: &mut T)
+        -> Result<(), &'static str>
+    {
         if command == "Retrieve all departments" {
-            info!("Retrieved full employee list:\n{:?}", self.employee_store.retrieve_all_employees());
+            info!("Retrieved full employee list:\n{:?}", employee_store.retrieve_all_employees());
             Ok(())
         } else {
             NON_MATCH_ERROR
@@ -25,8 +25,8 @@ mod tests {
     use crate::exercises::employee_management::employee_store;
     use crate::exercises::employee_management::employee_store::DepartmentInfo;
 
-    use super::{TextCommandExecutor, RetrieveAllTextCommandExecutor};
-    use crate::exercises::employee_management::text_command_executor::retrieve_all::NON_MATCH_ERROR;
+    use super::{CommandExecutor, RetrieveAllCommandExecutor};
+    use super::NON_MATCH_ERROR;
 
     fn get_mock_return() -> Vec<DepartmentInfo> {
         vec![DepartmentInfo{ department: "Pie Analysis".to_string(), employee_names: vec![] }]
@@ -45,9 +45,12 @@ mod tests {
                     .return_const(get_mock_return());
         });
 
-        let mut executor = RetrieveAllTextCommandExecutor { employee_store: &mut mock_store };
+        let executor = RetrieveAllCommandExecutor { };
+        let result = executor.try_execute(
+            &"Retrieve all departments".to_string(), &mut mock_store
+        );
 
-        assert_eq!(executor.try_execute(&"Retrieve all departments".to_string()), Ok(()));
+        assert_eq!(result, Ok(()));
 
         testing_logger::validate(|captured_logs| {
             assert_eq!(captured_logs.len(), 1);
@@ -68,8 +71,11 @@ mod tests {
                     .return_const(get_mock_return());
             });
 
-        let mut executor = RetrieveAllTextCommandExecutor { employee_store: &mut mock_store };
+        let executor = RetrieveAllCommandExecutor {  };
+        let result = executor.try_execute(
+            &"This is not a retrieve command!".to_string(), &mut mock_store
+        );
 
-        assert_eq!(executor.try_execute(&"This is not a retrieve command!".to_string()), NON_MATCH_ERROR);
+        assert_eq!(result, NON_MATCH_ERROR);
     }
 }

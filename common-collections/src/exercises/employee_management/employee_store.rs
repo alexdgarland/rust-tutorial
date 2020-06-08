@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use mockall_derive::automock;
-use std::fmt::{Debug, Result, Formatter};
+use std::fmt::Debug;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Debug, Clone)]
 pub struct DepartmentInfo {
@@ -26,21 +26,17 @@ pub trait EmployeeStore {
     fn retrieve_employees_by_department(&self, department: &String) -> Option<Vec<String>>;
 
     fn retrieve_all_employees(&self) -> Vec<DepartmentInfo>;
-
-    fn debug_string(&self) -> String;
 }
 
-impl Debug for dyn EmployeeStore {
-
-    fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "{}", self.debug_string())
-    }
-
-}
-
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct EmployeeStoreImpl {
     map: HashMap<String, Vec<String>>
+}
+
+impl EmployeeStoreImpl {
+    pub fn new() -> EmployeeStoreImpl {
+        EmployeeStoreImpl {map: HashMap::new() }
+    }
 }
 
 impl EmployeeStore for EmployeeStoreImpl {
@@ -65,24 +61,12 @@ impl EmployeeStore for EmployeeStoreImpl {
         infos
     }
 
-    fn debug_string(&self) -> String {
-        format!("EmployeeStoreImpl using map {:?}", self.map)
-    }
-
 }
 
-fn create_employee_store_impl() -> EmployeeStoreImpl {
-    EmployeeStoreImpl { map: HashMap::new() }
-}
-
-pub fn create_employee_store() -> Box<dyn EmployeeStore> {
-    Box::new(create_employee_store_impl())
-}
-
-pub(crate) fn setup_mock(setup_behaviour: fn(&mut MockEmployeeStore) -> ()) -> Box<dyn EmployeeStore> {
-    let mut raw_mock_store = MockEmployeeStore::new();
-    setup_behaviour(&mut raw_mock_store);
-    Box::new(raw_mock_store)
+pub(crate) fn setup_mock(setup_behaviour: fn(&mut MockEmployeeStore) -> ()) -> MockEmployeeStore {
+    let mut mock_store = MockEmployeeStore::new();
+    setup_behaviour(&mut mock_store);
+    mock_store
 }
 
 #[cfg(test)]
@@ -90,7 +74,6 @@ mod tests {
     use std::collections::HashMap;
 
     use super::{DepartmentInfo, EmployeeStore, EmployeeStoreImpl};
-    use super::create_employee_store_impl;
 
     fn get_department_one() -> String { String::from("Pie Quality Control") }
 
@@ -104,14 +87,14 @@ mod tests {
 
     #[test]
     fn test_add_employee_to_new_department() {
-        let mut store = create_employee_store_impl();
+        let mut store = EmployeeStoreImpl::new();
         store.add_employee(&get_name_one(), &get_department_one());
         assert_eq!(store.map.get(&get_department_one()), Some(&vec![get_name_one()]));
     }
 
     #[test]
     fn test_add_employee_to_existing_department() {
-        let mut store = create_employee_store_impl();
+        let mut store = EmployeeStoreImpl::new();
         store.add_employee(&get_name_one(), &get_department_one());
         store.add_employee(&get_name_two(), &get_department_one());
         assert_eq!(
@@ -122,7 +105,7 @@ mod tests {
 
     #[test]
     fn test_add_employee_to_existing_department_maintains_sort_order() {
-        let mut store = create_employee_store_impl();
+        let mut store = EmployeeStoreImpl::new();
         store.add_employee(&get_name_two(), &get_department_one());
         store.add_employee(&get_name_one(), &get_department_one());
         assert_eq!(
@@ -133,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_retrieve_employees_for_missing_department_returns_none() {
-        let store = create_employee_store_impl();
+        let store = EmployeeStoreImpl::new();
         assert_eq!(store.retrieve_employees_by_department(&get_department_one()), None);
     }
 
@@ -149,7 +132,7 @@ mod tests {
 
     #[test]
     fn test_retrieve_all_employees_for_new_store_returns_empty_vector() {
-        let store = create_employee_store_impl();
+        let store = EmployeeStoreImpl::new();
         let expected: Vec<DepartmentInfo> = vec![];
         assert_eq!(store.retrieve_all_employees(), expected);
     }
