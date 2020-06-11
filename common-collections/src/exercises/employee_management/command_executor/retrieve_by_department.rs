@@ -4,41 +4,35 @@ use lazy_static::lazy_static;
 
 use crate::exercises::employee_management::employee_store::EmployeeStore;
 
-use super::CommandExecutor;
-
 static NON_MATCH_ERROR: Result<(), &str> = Err("Text command did not match pattern to retrieve employees by department");
 
-pub struct RetrieveDepartmentCommandExecutor { }
-
-impl CommandExecutor for RetrieveDepartmentCommandExecutor {
-    fn try_execute<T: 'static + EmployeeStore>(&self, command: &str, employee_store: &mut T)
-        -> Result<(), &'static str>
-    {
-        lazy_static! {
-            static ref RETRIEVE_DEPARTMENT_REGEX: Regex =
-                Regex::new(r"^Retrieve department (?P<department>.*)$").unwrap();
-        }
-
-        match RETRIEVE_DEPARTMENT_REGEX
-            .captures(&command[..])
-            .and_then(|captures| captures.name("department").map(|m| m.as_str().to_string()))
-        {
-            Some(department) => {
-                info!("Retrieving employees for department {}", department);
-                match employee_store.retrieve_employees_by_department(&department) {
-                    Some(employees) =>
-                        info!("{:?}", employees),
-                    None =>
-                        warn!("Department {} does not exist", department)
-                }
-                Ok(())
-            }
-            None =>
-                NON_MATCH_ERROR
-        }
-
+pub fn retrieve_by_department<E: EmployeeStore>(command: &str, employee_store: &mut E) -> Result<(), &'static str>
+{
+    lazy_static! {
+        static ref RETRIEVE_DEPARTMENT_REGEX: Regex =
+            Regex::new(r"^Retrieve department (?P<department>.*)$").unwrap();
     }
+
+    match RETRIEVE_DEPARTMENT_REGEX
+        .captures(&command[..])
+        .and_then(|captures| captures.name("department").map(|m| m.as_str().to_string()))
+    {
+        Some(department) => {
+            info!("Retrieving employees for department {}", department);
+            match employee_store.retrieve_employees_by_department(&department) {
+                Some(employees) =>
+                    info!("{:?}", employees),
+                None =>
+                    warn!("Department {} does not exist", department)
+            }
+            Ok(())
+        }
+        None =>
+            NON_MATCH_ERROR
+    }
+
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -46,10 +40,8 @@ mod tests {
     use mockall::predicate::eq;
 
     use crate::exercises::employee_management::employee_store;
-    use crate::exercises::employee_management::command_executor::retrieve_department::NON_MATCH_ERROR;
 
-    use super::RetrieveDepartmentCommandExecutor;
-    use super::super::CommandExecutor;
+    use super::{NON_MATCH_ERROR, retrieve_by_department};
 
     fn get_mock_return() -> Vec<String> {
         vec!["Bob Bobertson".to_string(), "Weebl Bull".to_string()]
@@ -68,11 +60,10 @@ mod tests {
                     .return_const(Some(get_mock_return()));
             });
 
-        let executor = RetrieveDepartmentCommandExecutor { };
-
-        let command = String::from("Retrieve department Pie Quality Control");
-
-        assert_eq!(executor.try_execute(&command, &mut mock_store), Ok(()));
+        assert_eq!(
+            retrieve_by_department("Retrieve department Pie Quality Control", &mut mock_store),
+            Ok(())
+        );
 
         testing_logger::validate(|captured_logs| {
             assert_eq!(captured_logs.len(), 2);
@@ -96,11 +87,10 @@ mod tests {
                     .return_const(None);
             });
 
-        let executor = RetrieveDepartmentCommandExecutor { };
-
-        let command = String::from("Retrieve department Pie Quality Control");
-
-        assert_eq!(executor.try_execute(&command, &mut mock_store), Ok(()));
+        assert_eq!(
+            retrieve_by_department("Retrieve department Pie Quality Control", &mut mock_store),
+            Ok(())
+        );
 
         testing_logger::validate(|captured_logs| {
             assert_eq!(captured_logs.len(), 2);
@@ -121,10 +111,9 @@ mod tests {
                     .return_const(Some(get_mock_return()));
             });
 
-        let executor = RetrieveDepartmentCommandExecutor { };
-
-        let command = String::from("This is not a command to retrieve by department!");
-
-        assert_eq!(executor.try_execute(&command, &mut mock_store), NON_MATCH_ERROR);
+        assert_eq!(
+            retrieve_by_department("This is a bad command!", &mut mock_store),
+            NON_MATCH_ERROR
+        );
     }
 }

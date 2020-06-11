@@ -1,51 +1,49 @@
-use crate::exercises::employee_management::command_executor::CommandExecutor;
+use std::result::Result;
+
 use crate::exercises::employee_management::employee_store::{EmployeeStore, EmployeeStoreImpl};
 
-static NO_MATCHES_ERROR: Result<(), &str> = Err("No match could be found to execute the submitted text command");
+static NO_MATCHES_ERROR_MESSAGE: &str = "No match could be found to execute the submitted text command";
 
-struct CommandDispatcher<S: 'static + EmployeeStore, C: CommandExecutor> {
-    command_executors: Vec<C>,  // TODO - this may actually need to be trait objects to allow for different types to exist in the vector?
-    employee_store: S
+pub type Executor<E, R> = fn(&str, &mut E) -> Result<R, &'static str>;
+
+pub struct Dispatcher<E: 'static + EmployeeStore, R> {
+    command_executors: Vec<Executor<E, R>>,
+    employee_store: E,
 }
-// TODO - related to the above, also a question whether we want to switch
-// TODO     to using free functions of a shared type (behind an alias) rather than traits -
-// TODO     however to test these properly we may need to switch mocking library to Mocktopus
-// TODO     (see https://asomers.github.io/mock_shootout/)
 
-impl<S: 'static + EmployeeStore , C: CommandExecutor> CommandDispatcher<S, C> {
-    pub fn process(&mut self, text_command: &str) -> Result<(), &str> {
+impl<E: 'static + EmployeeStore, R> Dispatcher<E, R> {
+    pub fn process(&mut self, text_command: &str) -> Result<R, &str> {
+        debug!("Checking for command matching text \"{}\"", text_command);
         for executor in &self.command_executors {
-            match executor.try_execute(text_command, &mut self.employee_store) {
-                Ok(()) =>
-                    return Ok(()),
+            match executor(text_command, &mut self.employee_store) {
+                Ok(r) =>
+                    return Ok(r),
                 Err(executor_error_message) =>
-                    info!("{}", executor_error_message)
+                    debug!("{}", executor_error_message)
             }
         }
-        NO_MATCHES_ERROR
+        Err(NO_MATCHES_ERROR_MESSAGE)
     }
-
 }
 
-fn create_dispatcher<C: CommandExecutor>(command_executors: Vec<C>) -> CommandDispatcher<EmployeeStoreImpl, C>{
-    CommandDispatcher {
-        command_executors,
-        employee_store: EmployeeStoreImpl::new()
-    }
+pub fn create_dispatcher<R>(command_executors: Vec<Executor<EmployeeStoreImpl, R>>) -> Dispatcher<EmployeeStoreImpl, R> {
+    Dispatcher { command_executors, employee_store: EmployeeStoreImpl::new() }
 }
 
 #[cfg(test)]
 mod tests {
-    use mockall::predicate::eq;
+    use log::Level::Debug;
+    use testing_logger::CapturedLog;
 
-    use super::NO_MATCHES_ERROR;
-    use super::super::command_executor::MockCommandExecutor;
-    use super::CommandDispatcher;
+    use crate::exercises::employee_management::command_dispatcher::NO_MATCHES_ERROR_MESSAGE;
     use crate::exercises::employee_management::employee_store::{EmployeeStore, EmployeeStoreImpl};
 
+    use super::Dispatcher;
+
     static COMMAND: &str = "Some command";
-    static ERROR_RETURN_MESSAGE: &str = "This mock executor couldn't handle the text command";
-    static ERROR_RETURN: Result<(), &str> = Err(ERROR_RETURN_MESSAGE);
+    static EXECUTOR_SUCCESS_MESSAGE_ONE: &str = "This first executor handled the command okay";
+    static EXECUTOR_SUCCESS_MESSAGE_TWO: &str = "This second executor handled the command okay";
+    static EXECUTOR_ERROR_MESSAGE: &str = "This executor couldn't handle the text command";
 
     fn mock_employee_store() -> EmployeeStoreImpl {
         let mut store = EmployeeStoreImpl::new();
@@ -53,75 +51,75 @@ mod tests {
         store
     }
 
-    fn mock_executor(expected_call_count: usize, result: Result<(), &'static str>) -> MockCommandExecutor
-    {
-        let mut mock_executor = MockCommandExecutor::new();
-        mock_executor
-            .expect_try_execute()
-            .times(expected_call_count)
-            .with(eq(COMMAND), eq(mock_employee_store()))
-            .return_const(result);
-        mock_executor
-    }
-
-    fn assert_error_log_entries(expected_length: usize) {
+    fn assert_log_entries(expected_number_of_errors: usize) {
+        let assert_level = |l: &CapturedLog| assert_eq!(l.level, Debug, "Logging not at expected level");
         testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), expected_length);
-            for entry in captured_logs {
-                assert_eq!(entry.body, ERROR_RETURN_MESSAGE);
-                assert_eq!(entry.level, log::Level::Info);
+            assert_eq!(captured_logs.len(), expected_number_of_errors + 1, "Did not get expected number of log entries");
+            assert_eq!(captured_logs[0].body, format!("Checking for command matching text \"{}\"", COMMAND));
+            assert_level(&captured_logs[0]);
+            for entry in &captured_logs[1..] {
+                assert_eq!(entry.body, EXECUTOR_ERROR_MESSAGE, "Error log message not as expected");
+                assert_level(entry);
             };
         });
     }
 
+    fn success_stub_one(command: &str, employee_store: &mut EmployeeStoreImpl) -> Result<&'static str, &'static str> {
+        assert_eq!((command, employee_store), (COMMAND, &mut mock_employee_store()));
+        Ok(EXECUTOR_SUCCESS_MESSAGE_ONE)
+    }
+
+    fn success_stub_two(command: &str, employee_store: &mut EmployeeStoreImpl) -> Result<&'static str, &'static str> {
+        assert_eq!((command, employee_store), (COMMAND, &mut mock_employee_store()));
+        Ok(EXECUTOR_SUCCESS_MESSAGE_TWO)
+    }
+
+    fn error_stub(command: &str, employee_store: &mut EmployeeStoreImpl) -> Result<&'static str, &'static str> {
+        assert_eq!((command, employee_store), (COMMAND, &mut mock_employee_store()));
+        Err(EXECUTOR_ERROR_MESSAGE)
+    }
+
     #[test]
     fn test_calls_one_executor_with_matching_command() {
-        let mut dispatcher = CommandDispatcher {
-            command_executors: vec![mock_executor(1, Ok(())),],
-            employee_store: mock_employee_store()
+        testing_logger::setup();
+        let mut dispatcher = Dispatcher {
+            command_executors: vec![success_stub_one],
+            employee_store: mock_employee_store(),
         };
-        assert_eq!(dispatcher.process(COMMAND), Ok(()));
+        assert_eq!(dispatcher.process(COMMAND), Ok(EXECUTOR_SUCCESS_MESSAGE_ONE));
+        assert_log_entries(0);
     }
 
     #[test]
     fn test_bypasses_non_matching_executor() {
         testing_logger::setup();
-        let mut dispatcher = CommandDispatcher {
-            command_executors: vec![
-                mock_executor(1, ERROR_RETURN),
-                mock_executor(1, Ok(())),
-            ],
-            employee_store: mock_employee_store()
+        let mut dispatcher = Dispatcher {
+            command_executors: vec![error_stub, success_stub_one],
+            employee_store: mock_employee_store(),
         };
-        assert_eq!(dispatcher.process(COMMAND), Ok(()));
-        assert_error_log_entries(1);
+        assert_eq!(dispatcher.process(COMMAND), Ok(EXECUTOR_SUCCESS_MESSAGE_ONE));
+        assert_log_entries(1);
     }
 
     #[test]
     fn test_stops_on_first_matching_executor() {
-        let mut dispatcher = CommandDispatcher {
-            command_executors: vec![
-                mock_executor(1, Ok(())),
-                mock_executor(0, Ok(())),
-                mock_executor(0, ERROR_RETURN),
-            ],
-            employee_store: mock_employee_store()
+        testing_logger::setup();
+        let mut dispatcher = Dispatcher {
+            command_executors: vec![success_stub_one, success_stub_two, error_stub],
+            employee_store: mock_employee_store(),
         };
-        assert_eq!(dispatcher.process(COMMAND), Ok(()));
+        assert_eq!(dispatcher.process(COMMAND), Ok(EXECUTOR_SUCCESS_MESSAGE_ONE));
+        assert_log_entries(0);
     }
 
     #[test]
     fn test_returns_error_if_no_matching_executors() {
         testing_logger::setup();
-        let mut dispatcher = CommandDispatcher {
-            command_executors: vec![
-                mock_executor(1, ERROR_RETURN),
-                mock_executor(1, ERROR_RETURN),
-            ],
-            employee_store: mock_employee_store()
+        let mut dispatcher = Dispatcher {
+            command_executors: vec![error_stub, error_stub],
+            employee_store: mock_employee_store(),
         };
-        assert_eq!(dispatcher.process(COMMAND), NO_MATCHES_ERROR);
-        assert_error_log_entries(2);
+        assert_eq!(dispatcher.process(COMMAND), Err(NO_MATCHES_ERROR_MESSAGE));
+        assert_log_entries(2);
     }
-
 }

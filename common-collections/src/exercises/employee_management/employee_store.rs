@@ -1,7 +1,10 @@
 use std::collections::HashMap;
+use std::fmt::Debug;
 
 use mockall_derive::automock;
-use std::fmt::Debug;
+
+// TODO - a lot of the Strings used here for params etc could probably be &str's -
+// TODO change here and at site of use (otherwise calling code will auto-coerce to &str and stay verbose)
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Debug, Clone)]
 pub struct DepartmentInfo {
@@ -35,7 +38,7 @@ pub struct EmployeeStoreImpl {
 
 impl EmployeeStoreImpl {
     pub fn new() -> EmployeeStoreImpl {
-        EmployeeStoreImpl {map: HashMap::new() }
+        EmployeeStoreImpl { map: HashMap::new() }
     }
 }
 
@@ -60,7 +63,6 @@ impl EmployeeStore for EmployeeStoreImpl {
         infos.sort_unstable();
         infos
     }
-
 }
 
 pub(crate) fn setup_mock(setup_behaviour: fn(&mut MockEmployeeStore) -> ()) -> MockEmployeeStore {

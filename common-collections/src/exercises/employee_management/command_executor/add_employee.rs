@@ -1,53 +1,48 @@
 use regex::{Captures, Regex};
+
 use lazy_static::lazy_static;
 
 use crate::exercises::employee_management::employee_store::EmployeeStore;
-use super::CommandExecutor;
 
 static NON_MATCH_ERROR: Result<(), &str> = Err("Text command did not match pattern to add employee");
 
-pub struct AddEmployeeCommandExecutor { }
-
-impl CommandExecutor for AddEmployeeCommandExecutor {
-    fn try_execute<T: 'static + EmployeeStore>(&self, command: &str, employee_store: &mut T)
-        -> Result<(), &'static str>
-    {
-        lazy_static! {
+pub fn add_employee<E: EmployeeStore>(command: &str, employee_store: &mut E) -> Result<(), &'static str>
+{
+    lazy_static! {
             static ref ADD_EMPLOYEE_REGEX: Regex =
                 Regex::new(r"^Add (?P<employee_name>.*) to (?P<department>.*)$").unwrap();
         }
 
-        fn extract_fields(captures: Captures) -> Option<(Option<String>, Option<String>)> {
-            let extract = |key: &str|
-                captures
-                    .name(key)
-                    .map(|m| m.as_str().to_string());
+    fn extract_fields(captures: Captures) -> Option<(Option<String>, Option<String>)> {
+        let extract = |key: &str|
+            captures
+                .name(key)
+                .map(|m| m.as_str().to_string());
 
-            Some((extract("employee_name"), extract("department")))
-        }
+        Some((extract("employee_name"), extract("department")))
+    }
 
-        match ADD_EMPLOYEE_REGEX.captures(&command[..]).and_then(extract_fields)
-        {
-            Some((Some(employee_name), Some(department))) => {
-                info!("Adding employee {} to department {}", employee_name, department);
-                employee_store.add_employee(&employee_name, &department);
-                Ok(())
-            }
-            _ =>
-                NON_MATCH_ERROR
+    match ADD_EMPLOYEE_REGEX.captures(&command[..]).and_then(extract_fields)
+    {
+        Some((Some(employee_name), Some(department))) => {
+            info!("Adding employee {} to department {}", employee_name, department);
+            employee_store.add_employee(&employee_name, &department);
+            Ok(())
         }
+        _ =>
+            NON_MATCH_ERROR
     }
 }
 
+
 #[cfg(test)]
 mod tests {
-    use mockall::predicate::eq;
     use log::Level;
+    use mockall::predicate::eq;
 
     use crate::exercises::employee_management::employee_store;
-    use super::super::CommandExecutor;
-    use super::AddEmployeeCommandExecutor;
-    use crate::exercises::employee_management::command_executor::add_employee::NON_MATCH_ERROR;
+
+    use super::{add_employee, NON_MATCH_ERROR};
 
     #[test]
     fn test_add_command_ok_with_valid() {
@@ -64,11 +59,10 @@ mod tests {
                     ).return_const(());
             });
 
-        let executor = AddEmployeeCommandExecutor { };
-
-        let command = "Add Bob Bobertson to Pie Quality Control".to_string();
-
-        assert_eq!(executor.try_execute(&command, &mut mock_store), Ok(()));
+        assert_eq!(
+            add_employee("Add Bob Bobertson to Pie Quality Control", &mut mock_store),
+            Ok(())
+        );
 
         testing_logger::validate(|captured_logs| {
             assert_eq!(captured_logs.len(), 1);
@@ -87,10 +81,9 @@ mod tests {
                     .return_const(());
             });
 
-        let executor = AddEmployeeCommandExecutor { };
-
-        let command = String::from("This is not an add command!");
-
-        assert_eq!(executor.try_execute(&command, &mut mock_store), NON_MATCH_ERROR);
+        assert_eq!(
+            add_employee("This is not an add command!", &mut mock_store),
+            NON_MATCH_ERROR
+        );
     }
 }
