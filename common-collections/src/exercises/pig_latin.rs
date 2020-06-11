@@ -13,12 +13,12 @@ mod tests {
     use crate::exercises::pig_latin::pig_latinise;
 
     #[test]
-    fn test_pignlatinise_word_starting_with_consonant() {
+    fn test_piglatinise_word_starting_with_consonant() {
         assert_eq!(pig_latinise(&String::from("first")), String::from("irst-fay"));
     }
 
     #[test]
-    fn test_pignlatinise_word_starting_with_vowel() {
+    fn test_piglatinise_word_starting_with_vowel() {
         assert_eq!(pig_latinise(&String::from("apple")), String::from("apple-hay"));
     }
 }
