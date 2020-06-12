@@ -18,12 +18,12 @@ pub fn retrieve_by_department<E: EmployeeStore>(command: &str, employee_store: &
         .and_then(|captures| captures.name("department").map(|m| m.as_str().to_string()))
     {
         Some(department) => {
-            info!("Retrieving employees for department {}", department);
+            info!("Retrieving employees for department \"{}\"", department);
             match employee_store.retrieve_employees_by_department(&department) {
                 Some(employees) =>
                     info!("{:?}", employees),
                 None =>
-                    warn!("Department {} does not exist", department)
+                    warn!("Department \"{}\" does not exist", department)
             }
             Ok(())
         }
@@ -67,7 +67,7 @@ mod tests {
 
         testing_logger::validate(|captured_logs| {
             assert_eq!(captured_logs.len(), 2);
-            assert_eq!(captured_logs[0].body, "Retrieving employees for department Pie Quality Control");
+            assert_eq!(captured_logs[0].body, "Retrieving employees for department \"Pie Quality Control\"");
             assert_eq!(captured_logs[0].level, Level::Info);
             assert_eq!(captured_logs[1].body, format!("{:?}", get_mock_return()));
             assert_eq!(captured_logs[1].level, Level::Info);
@@ -94,9 +94,9 @@ mod tests {
 
         testing_logger::validate(|captured_logs| {
             assert_eq!(captured_logs.len(), 2);
-            assert_eq!(captured_logs[0].body, "Retrieving employees for department Pie Quality Control");
+            assert_eq!(captured_logs[0].body, "Retrieving employees for department \"Pie Quality Control\"");
             assert_eq!(captured_logs[0].level, Level::Info);
-            assert_eq!(captured_logs[1].body, format!("Department Pie Quality Control does not exist"));
+            assert_eq!(captured_logs[1].body, format!("Department \"Pie Quality Control\" does not exist"));
             assert_eq!(captured_logs[1].level, Level::Warn);
         });
     }

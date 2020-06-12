@@ -25,7 +25,7 @@ pub fn add_employee<E: EmployeeStore>(command: &str, employee_store: &mut E) -> 
     match ADD_EMPLOYEE_REGEX.captures(&command[..]).and_then(extract_fields)
     {
         Some((Some(employee_name), Some(department))) => {
-            info!("Adding employee {} to department {}", employee_name, department);
+            info!("Adding employee \"{}\" to department \"{}\"", employee_name, department);
             employee_store.add_employee(&employee_name, &department);
             Ok(())
         }
@@ -66,7 +66,7 @@ mod tests {
 
         testing_logger::validate(|captured_logs| {
             assert_eq!(captured_logs.len(), 1);
-            assert_eq!(captured_logs[0].body, "Adding employee Bob Bobertson to department Pie Quality Control");
+            assert_eq!(captured_logs[0].body, "Adding employee \"Bob Bobertson\" to department \"Pie Quality Control\"");
             assert_eq!(captured_logs[0].level, Level::Info);
         });
     }
