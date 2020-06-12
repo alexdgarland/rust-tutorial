@@ -1,6 +1,7 @@
 use std::result::Result;
 
 use crate::exercises::employee_management::employee_store::{EmployeeStore, EmployeeStoreImpl};
+use crate::exercises::employee_management::command_executor::{add_employee, retrieve_all, retrieve_by_department};
 
 static NO_MATCHES_ERROR_MESSAGE: &str = "No match could be found to execute the submitted text command";
 
@@ -26,8 +27,11 @@ impl<E: 'static + EmployeeStore, R> Dispatcher<E, R> {
     }
 }
 
-pub fn create_dispatcher<R>(command_executors: Vec<Executor<EmployeeStoreImpl, R>>) -> Dispatcher<EmployeeStoreImpl, R> {
-    Dispatcher { command_executors, employee_store: EmployeeStoreImpl::new() }
+pub fn create_dispatcher() -> Dispatcher<EmployeeStoreImpl, ()> {
+    Dispatcher {
+        command_executors: vec![add_employee, retrieve_all, retrieve_by_department],
+        employee_store: EmployeeStoreImpl::new()
+    }
 }
 
 #[cfg(test)]
