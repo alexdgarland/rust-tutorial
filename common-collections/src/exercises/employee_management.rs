@@ -8,7 +8,16 @@ mod employee_store;
 mod command;
 
 // TODO - maybe add some additional methods - list departments (without employees), delete employees/ departments?
-// TODO - add help/ usage functionality
+
+fn show_usage() {
+    info!("Showing usage");
+    println!("Employee Management - valid command formats:");
+    println!(" - \"Add (employee name) to (department name)\"");
+    println!(" - \"Retrieve all departments\"");
+    println!(" - \"Retrieve department (department name)\"");
+    println!(" - \"Help\" to show this usage info");
+    println!(" - \"Quit\" to exit the demo program");
+}
 
 fn get_string(message: &str) -> io::Result<String> {
     println!("{}", message);
@@ -21,7 +30,8 @@ fn process_command<E: EmployeeStore>(text_command: &str, dispatcher: &mut Dispat
     match dispatcher.process(text_command) {
         Err(message) => {
             error!("{}", message);
-            error!("Error processing command \"{}\", please try again", text_command)
+            error!("Error processing command \"{}\", please try again", text_command);
+            show_usage();
         },
         _ =>
             debug!("Command \"{}\" processed okay", text_command)
@@ -32,6 +42,8 @@ pub fn demo_employee_management() {
 
     let mut dispatcher = command::create_dispatcher();
 
+    show_usage();
+
     loop {
         match get_string("Please enter a text command:") {
             Ok(raw_string) => {
@@ -39,7 +51,12 @@ pub fn demo_employee_management() {
                 if text_command == "Quit" {
                     break;
                 }
-                process_command(text_command, &mut dispatcher);
+                if text_command == "Help" {
+                    show_usage();
+                }
+                else {
+                    process_command(text_command, &mut dispatcher);
+                }
             }
             Err(e) =>
                 error!("There was an error reading stdin: {:?}", e)
