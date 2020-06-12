@@ -1,13 +1,11 @@
 use std::io;
 
-use command_dispatcher::Dispatcher;
+use command::Dispatcher;
 
 use crate::exercises::employee_management::employee_store::EmployeeStore;
 
 mod employee_store;
-// TODO - might make sense to restructure this as command::Dispatcher and command::executor::* or similar
-mod command_dispatcher;
-mod command_executor;
+mod command;
 
 // TODO - maybe add some additional methods - list departments (without employees), delete employees/ departments?
 // TODO - add help/ usage functionality
@@ -32,7 +30,7 @@ fn process_command<E: EmployeeStore>(text_command: &str, dispatcher: &mut Dispat
 
 pub fn demo_employee_management() {
 
-    let mut dispatcher = command_dispatcher::create_dispatcher();
+    let mut dispatcher = command::create_dispatcher();
 
     loop {
         match get_string("Please enter a text command:") {

@@ -1,7 +1,13 @@
 use std::result::Result;
 
+mod add_employee;
+mod retrieve_by_department;
+mod retrieve_all;
+
 use crate::exercises::employee_management::employee_store::{EmployeeStore, EmployeeStoreImpl};
-use crate::exercises::employee_management::command_executor::{add_employee, retrieve_all, retrieve_by_department};
+use add_employee::add_employee;
+use retrieve_all::retrieve_all;
+use retrieve_by_department::retrieve_by_department;
 
 static NO_MATCHES_ERROR_MESSAGE: &str = "No match could be found to execute the submitted text command";
 
@@ -39,7 +45,7 @@ mod tests {
     use log::Level::Debug;
     use testing_logger::CapturedLog;
 
-    use crate::exercises::employee_management::command_dispatcher::NO_MATCHES_ERROR_MESSAGE;
+    use crate::exercises::employee_management::command::NO_MATCHES_ERROR_MESSAGE;
     use crate::exercises::employee_management::employee_store::{EmployeeStore, EmployeeStoreImpl};
 
     use super::Dispatcher;
