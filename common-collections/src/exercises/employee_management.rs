@@ -7,12 +7,17 @@ use crate::exercises::employee_management::employee_store::EmployeeStore;
 mod employee_store;
 mod command;
 
-// TODO - maybe add some additional methods - list departments (without employees), delete employees/ departments?
+// TODO - maybe add some additional methods - delete employees/ departments?
 
+// TODO - it's easy to forget to add an entry here when adding new methods,
+//  is there an easy way to combine this with the function impl?
+//  In some languages I would make a class/ struct with a string and a method,
+//  but in this case not sure if the approach to generics will cause issues - need to check
 fn show_usage() {
     info!("Showing usage");
     println!("Employee Management - valid command formats:");
     println!(" - \"Add (employee name) to (department name)\"");
+    println!(" - \"List departments\"");
     println!(" - \"Retrieve all departments\"");
     println!(" - \"Retrieve department (department name)\"");
     println!(" - \"Help\" to show this usage info");

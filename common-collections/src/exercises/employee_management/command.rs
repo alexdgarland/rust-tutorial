@@ -1,17 +1,29 @@
 use std::result::Result;
 
-mod add_employee;
-mod retrieve_by_department;
-mod retrieve_all;
-
-use crate::exercises::employee_management::employee_store::{EmployeeStore, EmployeeStoreImpl};
 use add_employee::add_employee;
+use list_departments::list_departments;
 use retrieve_all::retrieve_all;
 use retrieve_by_department::retrieve_by_department;
+
+use crate::exercises::employee_management::employee_store::{EmployeeStore, EmployeeStoreImpl};
+
+mod add_employee;
+mod list_departments;
+mod retrieve_by_department;
+mod retrieve_all;
 
 static NO_MATCHES_ERROR_MESSAGE: &str = "No match could be found to execute the submitted text command";
 
 pub type Executor<E, R> = fn(&str, &mut E) -> Result<R, &'static str>;
+
+fn get_all_commands() -> Vec<Executor<EmployeeStoreImpl, ()>> {
+    vec![
+        add_employee,
+        list_departments,
+        retrieve_all,
+        retrieve_by_department,
+    ]
+}
 
 pub struct Dispatcher<E: 'static + EmployeeStore, R> {
     command_executors: Vec<Executor<E, R>>,
@@ -35,7 +47,7 @@ impl<E: 'static + EmployeeStore, R> Dispatcher<E, R> {
 
 pub fn create_dispatcher() -> Dispatcher<EmployeeStoreImpl, ()> {
     Dispatcher {
-        command_executors: vec![add_employee, retrieve_all, retrieve_by_department],
+        command_executors: get_all_commands(),
         employee_store: EmployeeStoreImpl::new()
     }
 }

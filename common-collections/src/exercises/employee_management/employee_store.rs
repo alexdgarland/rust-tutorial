@@ -29,6 +29,8 @@ pub trait EmployeeStore {
     fn retrieve_employees_by_department(&self, department: &String) -> Option<Vec<String>>;
 
     fn retrieve_all_employees(&self) -> Vec<DepartmentInfo>;
+
+    fn list_departments(&self) -> Vec<String>;
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -62,6 +64,15 @@ impl EmployeeStore for EmployeeStoreImpl {
             .collect();
         infos.sort_unstable();
         infos
+    }
+
+    fn list_departments(&self) -> Vec<String> {
+        let mut departments: Vec<String> = self.map
+            .keys()
+            .map(|d| d.clone())
+            .collect();
+        departments.sort_unstable();
+        departments
     }
 }
 
@@ -156,5 +167,22 @@ mod tests {
             }
         ];
         assert_eq!(store.retrieve_all_employees(), expected);
+    }
+
+    #[test]
+    fn test_list_departments_empty() {
+        let store = EmployeeStoreImpl::new();
+        let expected: Vec<String> = vec![];
+        assert_eq!(store.list_departments(), expected);
+    }
+
+    #[test]
+    fn test_list_departments_populated() {
+        let mut map = HashMap::new();
+        map.insert("Department A".to_string(), vec!["Employee 1".to_string(), "Employee 2".to_string()]);
+        map.insert("Department B".to_string(), vec!["Employee 3".to_string(), "Employee 4".to_string()]);
+        let store = EmployeeStoreImpl{map} ;
+        let expected: Vec<String> = vec!["Department A".to_string(), "Department B".to_string()];
+        assert_eq!(store.list_departments(), expected);
     }
 }
