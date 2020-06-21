@@ -76,12 +76,6 @@ impl EmployeeStore for EmployeeStoreImpl {
     }
 }
 
-pub(crate) fn setup_mock(setup_behaviour: fn(&mut MockEmployeeStore) -> ()) -> MockEmployeeStore {
-    let mut mock_store = MockEmployeeStore::new();
-    setup_behaviour(&mut mock_store);
-    mock_store
-}
-
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;

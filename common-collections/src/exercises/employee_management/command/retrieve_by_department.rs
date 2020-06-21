@@ -39,9 +39,8 @@ mod tests {
     use log::Level;
     use mockall::predicate::eq;
 
-    use crate::exercises::employee_management::employee_store;
-
     use super::{NON_MATCH_ERROR, retrieve_by_department};
+    use super::super::shared_test_setup;
 
     fn get_mock_return() -> Vec<String> {
         vec!["Bob Bobertson".to_string(), "Weebl Bull".to_string()]
@@ -51,7 +50,7 @@ mod tests {
     fn test_retrieve_department_command_ok_with_valid_department_exists() {
         testing_logger::setup();
 
-        let mut mock_store = employee_store::setup_mock(
+        let mut mock_store = shared_test_setup::setup_store_mock(
             |mock| {
                 mock
                     .expect_retrieve_employees_by_department()
@@ -78,7 +77,7 @@ mod tests {
     fn test_retrieve_department_command_ok_with_valid_department_doesnt_exist() {
         testing_logger::setup();
 
-        let mut mock_store = employee_store::setup_mock(
+        let mut mock_store = shared_test_setup::setup_store_mock(
             |mock| {
                 mock
                     .expect_retrieve_employees_by_department()
@@ -103,7 +102,7 @@ mod tests {
 
     #[test]
     fn test_retrieve_department_command_err_and_uncalled_with_invalid() {
-        let mut mock_store = employee_store::setup_mock(
+        let mut mock_store = shared_test_setup::setup_store_mock(
             |mock| {
                 mock
                     .expect_retrieve_employees_by_department()

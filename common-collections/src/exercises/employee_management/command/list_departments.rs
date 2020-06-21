@@ -17,9 +17,8 @@ pub fn list_departments<E: EmployeeStore>(command: &str, employee_store: &mut E)
 mod tests {
     use log::Level::Info;
 
-    use crate::exercises::employee_management::employee_store;
-
-    use super::{NON_MATCH_ERROR, list_departments};
+    use super::{list_departments, NON_MATCH_ERROR};
+    use super::super::shared_test_setup;
 
     fn get_mock_return() -> Vec<String> {
         vec!["Department A".to_string(), "Department B".to_string()]
@@ -29,7 +28,7 @@ mod tests {
     fn test_list_departments_command_ok_with_valid() {
         testing_logger::setup();
 
-        let mut mock_store = employee_store::setup_mock(
+        let mut mock_store = shared_test_setup::setup_store_mock(
             |mock| {
                 mock
                     .expect_list_departments()
@@ -54,7 +53,7 @@ mod tests {
 
     #[test]
     fn test_list_departments_err_and_uncalled_with_invalid() {
-        let mut mock_store = employee_store::setup_mock(
+        let mut mock_store = shared_test_setup::setup_store_mock(
             |mock| {
                 mock
                     .expect_list_departments()

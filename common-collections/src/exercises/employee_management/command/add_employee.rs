@@ -40,15 +40,14 @@ mod tests {
     use log::Level;
     use mockall::predicate::eq;
 
-    use crate::exercises::employee_management::employee_store;
-
     use super::{add_employee, NON_MATCH_ERROR};
+    use super::super::shared_test_setup;
 
     #[test]
     fn test_add_command_ok_with_valid() {
         testing_logger::setup();
 
-        let mut mock_store = employee_store::setup_mock(
+        let mut mock_store = shared_test_setup::setup_store_mock(
             |mock| {
                 mock
                     .expect_add_employee()
@@ -73,7 +72,7 @@ mod tests {
 
     #[test]
     fn test_add_command_err_and_uncalled_with_invalid() {
-        let mut mock_store = employee_store::setup_mock(
+        let mut mock_store = shared_test_setup::setup_store_mock(
             |mock| {
                 mock
                     .expect_add_employee()

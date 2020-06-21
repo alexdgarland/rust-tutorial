@@ -17,10 +17,10 @@ pub fn retrieve_all<E: EmployeeStore>(command: &str, employee_store: &mut E) -> 
 mod tests {
     use log::Level::Info;
 
-    use crate::exercises::employee_management::employee_store;
     use crate::exercises::employee_management::employee_store::DepartmentInfo;
 
     use super::{NON_MATCH_ERROR, retrieve_all};
+    use super::super::shared_test_setup;
 
     fn get_mock_return() -> Vec<DepartmentInfo> {
         vec![DepartmentInfo{ department: "Pie Analysis".to_string(), employee_names: vec![] }]
@@ -30,7 +30,7 @@ mod tests {
     fn test_retrieve_all_command_ok_with_valid() {
         testing_logger::setup();
 
-        let mut mock_store = employee_store::setup_mock(
+        let mut mock_store = shared_test_setup::setup_store_mock(
             |mock| {
                 mock
                     .expect_retrieve_all_employees()
@@ -55,7 +55,7 @@ mod tests {
 
     #[test]
     fn test_retrieve_all_err_and_uncalled_with_invalid() {
-        let mut mock_store = employee_store::setup_mock(
+        let mut mock_store = shared_test_setup::setup_store_mock(
             |mock| {
                 mock
                     .expect_retrieve_all_employees()
