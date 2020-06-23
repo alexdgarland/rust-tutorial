@@ -3,23 +3,10 @@ use std::fmt::Debug;
 
 use mockall_derive::automock;
 
-// TODO - a lot of the Strings used here for params etc could probably be &str's -
-// TODO change here and at site of use (otherwise calling code will auto-coerce to &str and stay verbose)
-
 #[derive(Eq, PartialEq, Ord, PartialOrd, Debug, Clone)]
 pub struct DepartmentInfo {
     pub department: String,
     pub employee_names: Vec<String>,
-}
-
-impl DepartmentInfo {
-    fn create_from_refs(refs: (&String, &Vec<String>)) -> DepartmentInfo {
-        let (department_ref, employee_names_ref) = refs;
-        DepartmentInfo {
-            department: department_ref.clone(),
-            employee_names: employee_names_ref.clone(),
-        }
-    }
 }
 
 #[automock]
@@ -54,13 +41,17 @@ impl EmployeeStore for EmployeeStoreImpl {
     }
 
     fn retrieve_employees_by_department(&self, department: &String) -> Option<Vec<String>> {
-        self.map.get(department).map(|names| names.clone())
+        self.map
+            .get(department)
+            .map(|names| names.clone())
     }
 
     fn retrieve_all_employees(&self) -> Vec<DepartmentInfo> {
         let mut infos: Vec<DepartmentInfo> = self.map
             .iter()
-            .map(DepartmentInfo::create_from_refs)
+            .map(|(dep, names)|
+                DepartmentInfo { department: dep.clone(), employee_names: names.clone() }
+            )
             .collect();
         infos.sort_unstable();
         infos
