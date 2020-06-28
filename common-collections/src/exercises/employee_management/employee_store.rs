@@ -18,6 +18,8 @@ pub trait EmployeeStore {
     fn retrieve_all_employees(&self) -> Vec<DepartmentInfo>;
 
     fn list_departments(&self) -> Vec<String>;
+
+    fn delete_department(&mut self, department: &String) -> Result<DepartmentInfo, String>;
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -65,6 +67,22 @@ impl EmployeeStore for EmployeeStoreImpl {
         departments.sort_unstable();
         departments
     }
+
+    fn delete_department(&mut self, department: &String) -> Result<DepartmentInfo, String> {
+        match self.map.get(department) {
+            None => {
+                Err(department.clone())
+            },
+            Some(employee_names) => {
+                let deleted_department = DepartmentInfo {
+                    department: department.clone(),
+                    employee_names: employee_names.clone()
+                };
+                self.map.remove(department);
+                Ok(deleted_department)
+            },
+        }
+    }
 }
 
 #[cfg(test)]
@@ -73,101 +91,112 @@ mod tests {
 
     use super::{DepartmentInfo, EmployeeStore, EmployeeStoreImpl};
 
-    fn get_department_one() -> String { String::from("Pie Quality Control") }
+    fn department_one() -> String { String::from("Pie Quality Control") }
+    fn department_two() -> String { String::from("Stealthy Buccaneering") }
+    fn name_one() -> String { String::from("Bob Bobertson") }
+    fn name_two() -> String { String::from("Weebl Bull") }
+    fn name_three() -> String { String::from("Chris the Ninja Pirate") }
+    fn deptone_names() -> Vec<String> { vec![name_one(), name_two()] }
+    fn depttwo_names() -> Vec<String> { vec![name_three()] }
 
-    fn get_department_two() -> String { String::from("Stealthy Buccaneering") }
-
-    fn get_name_one() -> String { String::from("Bob Bobertson") }
-
-    fn get_name_two() -> String { String::from("Weebl Bull") }
-
-    fn get_name_three() -> String { String::from("Chris the Ninja Pirate") }
+    fn populated_store() -> EmployeeStoreImpl {
+        let mut map = HashMap::new();
+        map.insert(department_two(), vec![name_three()]);
+        map.insert(department_one(), vec![name_one(), name_two()]);
+        let store = EmployeeStoreImpl { map };
+        store
+    }
 
     #[test]
     fn test_add_employee_to_new_department() {
         let mut store = EmployeeStoreImpl::new();
-        store.add_employee(&get_name_one(), &get_department_one());
-        assert_eq!(store.map.get(&get_department_one()), Some(&vec![get_name_one()]));
+        store.add_employee(&name_one(), &department_one());
+        assert_eq!(store.map.get(&department_one()), Some(&vec![name_one()]));
     }
 
     #[test]
     fn test_add_employee_to_existing_department() {
         let mut store = EmployeeStoreImpl::new();
-        store.add_employee(&get_name_one(), &get_department_one());
-        store.add_employee(&get_name_two(), &get_department_one());
+        store.add_employee(&name_one(), &department_one());
+        store.add_employee(&name_two(), &department_one());
         assert_eq!(
-            store.map.get(&get_department_one()),
-            Some(&vec![get_name_one(), get_name_two()])
+            store.map.get(&department_one()),
+            Some(&vec![name_one(), name_two()])
         );
     }
 
     #[test]
     fn test_add_employee_to_existing_department_maintains_sort_order() {
         let mut store = EmployeeStoreImpl::new();
-        store.add_employee(&get_name_two(), &get_department_one());
-        store.add_employee(&get_name_one(), &get_department_one());
+        store.add_employee(&name_two(), &department_one());
+        store.add_employee(&name_one(), &department_one());
         assert_eq!(
-            store.map.get(&get_department_one()),
-            Some(&vec![get_name_one(), get_name_two()])
+            store.map.get(&department_one()),
+            Some(&vec![name_one(), name_two()])
         );
     }
 
     #[test]
     fn test_retrieve_employees_for_missing_department_returns_none() {
-        let store = EmployeeStoreImpl::new();
-        assert_eq!(store.retrieve_employees_by_department(&get_department_one()), None);
+        assert_eq!(
+            EmployeeStoreImpl::new().retrieve_employees_by_department(&department_one()),
+            None
+        );
     }
 
     #[test]
     fn test_retrieve_employees_for_existing_department_returns_employees() {
-        let employees = vec![get_name_one(), get_name_two()];
-        let mut map = HashMap::new();
-        map.insert(get_department_one(), employees.clone());
-        let store = EmployeeStoreImpl { map };
-        let expected = Some(employees);
-        assert_eq!(store.retrieve_employees_by_department(&get_department_one()), expected);
+        assert_eq!(
+            populated_store().retrieve_employees_by_department(&department_one()),
+            Some(deptone_names())
+        );
     }
 
     #[test]
     fn test_retrieve_all_employees_for_new_store_returns_empty_vector() {
-        let store = EmployeeStoreImpl::new();
         let expected: Vec<DepartmentInfo> = vec![];
-        assert_eq!(store.retrieve_all_employees(), expected);
+        assert_eq!(EmployeeStoreImpl::new().retrieve_all_employees(), expected);
     }
 
     #[test]
     fn test_retrieve_all_employees_for_populated_store_returns_expected_vector() {
-        let mut map = HashMap::new();
-        map.insert(get_department_two(), vec![get_name_three()]);
-        map.insert(get_department_one(), vec![get_name_one(), get_name_two()]);
-        let store = EmployeeStoreImpl { map };
         let expected = vec![
-            DepartmentInfo {
-                department: get_department_one(),
-                employee_names: vec![get_name_one(), get_name_two()],
-            },
-            DepartmentInfo {
-                department: get_department_two(),
-                employee_names: vec![get_name_three()],
-            }
+            DepartmentInfo { department: department_one(), employee_names: deptone_names(), },
+            DepartmentInfo { department: department_two(), employee_names: depttwo_names(), },
         ];
-        assert_eq!(store.retrieve_all_employees(), expected);
+        assert_eq!(populated_store().retrieve_all_employees(), expected);
     }
 
     #[test]
     fn test_list_departments_empty() {
-        let store = EmployeeStoreImpl::new();
         let expected: Vec<String> = vec![];
-        assert_eq!(store.list_departments(), expected);
+        assert_eq!(EmployeeStoreImpl::new().list_departments(), expected);
     }
 
     #[test]
     fn test_list_departments_populated() {
-        let mut map = HashMap::new();
-        map.insert("Department A".to_string(), vec!["Employee 1".to_string(), "Employee 2".to_string()]);
-        map.insert("Department B".to_string(), vec!["Employee 3".to_string(), "Employee 4".to_string()]);
-        let store = EmployeeStoreImpl{map} ;
-        let expected: Vec<String> = vec!["Department A".to_string(), "Department B".to_string()];
-        assert_eq!(store.list_departments(), expected);
+        assert_eq!(
+            populated_store().list_departments(),
+            vec![department_one(), department_two()]
+        );
+    }
+
+    #[test]
+    fn test_delete_existing_department() {
+        let mut store = populated_store();
+        let actual_return = store.delete_department(&department_one());
+
+        let expected_return = Ok(DepartmentInfo { department: department_one(), employee_names: deptone_names()} );
+        assert_eq!(actual_return, expected_return);
+        let mut expected_map = HashMap::new();
+        expected_map.insert(department_two(), depttwo_names());
+        assert_eq!(store.map, expected_map);
+    }
+
+    #[test]
+    fn test_delete_non_existent_department() {
+        let mut store = EmployeeStoreImpl::new();
+        let actual_return = store.delete_department(&department_one());
+        assert_eq!(actual_return, Err(department_one()));
     }
 }
