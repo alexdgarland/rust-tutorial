@@ -2,11 +2,21 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 
 use mockall_derive::automock;
+use crate::exercises::employee_management::employee_store::EmployeeDeletionResult::{
+    NoSuchDepartment, EmployeeNotInDepartment, SuccessfullyDeleted
+};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Debug, Clone)]
 pub struct DepartmentInfo {
     pub department: String,
     pub employee_names: Vec<String>,
+}
+
+#[derive(Eq, PartialEq, Debug, Clone)]
+pub enum EmployeeDeletionResult {
+    SuccessfullyDeleted,
+    NoSuchDepartment,
+    EmployeeNotInDepartment,
 }
 
 #[automock]
@@ -20,6 +30,8 @@ pub trait EmployeeStore {
     fn list_departments(&self) -> Vec<String>;
 
     fn delete_department(&mut self, department: &String) -> Result<DepartmentInfo, String>;
+
+    fn delete_employee(&mut self, employee_name: &String, department: &String) -> EmployeeDeletionResult;
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -72,15 +84,31 @@ impl EmployeeStore for EmployeeStoreImpl {
         match self.map.get(department) {
             None => {
                 Err(department.clone())
-            },
+            }
             Some(employee_names) => {
                 let deleted_department = DepartmentInfo {
                     department: department.clone(),
-                    employee_names: employee_names.clone()
+                    employee_names: employee_names.clone(),
                 };
                 self.map.remove(department);
                 Ok(deleted_department)
-            },
+            }
+        }
+    }
+
+    fn delete_employee(&mut self, employee_name: &String, department: &String) -> EmployeeDeletionResult {
+        match self.map.get_mut(department) {
+            None => NoSuchDepartment,
+            Some(names_list) => {
+                match names_list.iter().position(|en| en == employee_name)
+                {
+                    None => EmployeeNotInDepartment,
+                    Some(index) => {
+                        names_list.remove(index);
+                        SuccessfullyDeleted
+                    }
+                }
+            }
         }
     }
 }
@@ -90,22 +118,36 @@ mod tests {
     use std::collections::HashMap;
 
     use super::{DepartmentInfo, EmployeeStore, EmployeeStoreImpl};
+    use crate::exercises::employee_management::employee_store::EmployeeDeletionResult::{SuccessfullyDeleted, EmployeeNotInDepartment, NoSuchDepartment};
 
     fn department_one() -> String { String::from("Pie Quality Control") }
+
     fn department_two() -> String { String::from("Stealthy Buccaneering") }
+
     fn name_one() -> String { String::from("Bob Bobertson") }
+
     fn name_two() -> String { String::from("Weebl Bull") }
+
     fn name_three() -> String { String::from("Chris the Ninja Pirate") }
+
     fn deptone_names() -> Vec<String> { vec![name_one(), name_two()] }
+
     fn depttwo_names() -> Vec<String> { vec![name_three()] }
 
-    fn populated_store() -> EmployeeStoreImpl {
+    fn initial_populated_map() -> HashMap<String, Vec<String>> {
         let mut map = HashMap::new();
         map.insert(department_two(), vec![name_three()]);
         map.insert(department_one(), vec![name_one(), name_two()]);
-        let store = EmployeeStoreImpl { map };
-        store
+        map
     }
+
+    fn populated_store() -> EmployeeStoreImpl {
+        EmployeeStoreImpl { map: initial_populated_map() }
+    }
+
+    fn non_existent_employee() -> String { String::from("Hairy Lee") }
+
+    fn non_existent_department() -> String { String::from("Pie Rejection") }
 
     #[test]
     fn test_add_employee_to_new_department() {
@@ -161,8 +203,8 @@ mod tests {
     #[test]
     fn test_retrieve_all_employees_for_populated_store_returns_expected_vector() {
         let expected = vec![
-            DepartmentInfo { department: department_one(), employee_names: deptone_names(), },
-            DepartmentInfo { department: department_two(), employee_names: depttwo_names(), },
+            DepartmentInfo { department: department_one(), employee_names: deptone_names() },
+            DepartmentInfo { department: department_two(), employee_names: depttwo_names() },
         ];
         assert_eq!(populated_store().retrieve_all_employees(), expected);
     }
@@ -186,7 +228,7 @@ mod tests {
         let mut store = populated_store();
         let actual_return = store.delete_department(&department_one());
 
-        let expected_return = Ok(DepartmentInfo { department: department_one(), employee_names: deptone_names()} );
+        let expected_return = Ok(DepartmentInfo { department: department_one(), employee_names: deptone_names() });
         assert_eq!(actual_return, expected_return);
         let mut expected_map = HashMap::new();
         expected_map.insert(department_two(), depttwo_names());
@@ -198,5 +240,47 @@ mod tests {
         let mut store = EmployeeStoreImpl::new();
         let actual_return = store.delete_department(&department_one());
         assert_eq!(actual_return, Err(department_one()));
+    }
+
+    #[test]
+    fn test_delete_existing_employee() {
+        let mut store = populated_store();
+        let result = store.delete_employee(&name_one(), &department_one());
+        assert_eq!(result, SuccessfullyDeleted);
+        assert_eq!(store.retrieve_employees_by_department(&department_one()), Some(vec![name_two()]));
+    }
+
+    fn assert_unchanged(populated_store: EmployeeStoreImpl) {
+        assert_eq!(populated_store.map, initial_populated_map());
+    }
+
+    #[test]
+    fn test_fails_to_delete_non_existent_employee() {
+        let mut store = populated_store();
+        let result = store.delete_employee(
+            &non_existent_employee(), &department_one(),
+        );
+        assert_eq!(result, EmployeeNotInDepartment);
+        assert_unchanged(store);
+    }
+
+    #[test]
+    fn test_fails_to_delete_employee_in_wrong_department() {
+        let mut store = populated_store();
+        let result = store.delete_employee(
+            &name_three(), &department_one(),
+        );
+        assert_eq!(result, EmployeeNotInDepartment);
+        assert_unchanged(store);
+    }
+
+    #[test]
+    fn test_fails_to_delete_employee_in_non_existent_department() {
+        let mut store = populated_store();
+        let result = store.delete_employee(
+            &name_one(), &non_existent_department(),
+        );
+        assert_eq!(result, NoSuchDepartment);
+        assert_unchanged(store);
     }
 }

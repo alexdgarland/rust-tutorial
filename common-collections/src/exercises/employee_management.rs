@@ -7,7 +7,7 @@ use crate::exercises::employee_management::employee_store::EmployeeStore;
 mod employee_store;
 mod command;
 
-// TODO - maybe add some additional methods - delete employees/ departments?
+// TODO - maybe add some additional methods - delete departments?
 
 // TODO - it's easy to forget to add an entry here when adding new methods,
 //  is there an easy way to combine this with the function impl?
@@ -17,6 +17,7 @@ fn show_usage() {
     info!("Showing usage");
     println!("Employee Management - valid command formats:");
     println!(" - \"Add (employee name) to (department name)\"");
+    println!(" - \"Delete (employee name) from (department name)\"");
     println!(" - \"List departments\"");
     println!(" - \"Retrieve all departments\"");
     println!(" - \"Retrieve department (department name)\"");

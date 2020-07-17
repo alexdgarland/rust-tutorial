@@ -1,16 +1,19 @@
+
+mod add_employee;
+mod delete_employee;
+mod list_departments;
+mod retrieve_by_department;
+mod retrieve_all;
+
 use std::result::Result;
 
 use add_employee::add_employee;
+use delete_employee::delete_employee;
 use list_departments::list_departments;
 use retrieve_all::retrieve_all;
 use retrieve_by_department::retrieve_by_department;
 
 use crate::exercises::employee_management::employee_store::{EmployeeStore, EmployeeStoreImpl};
-
-mod add_employee;
-mod list_departments;
-mod retrieve_by_department;
-mod retrieve_all;
 
 static NO_MATCHES_ERROR_MESSAGE: &str = "No match could be found to execute the submitted text command";
 
@@ -19,6 +22,7 @@ pub type Executor<E, R> = fn(&str, &mut E) -> Result<R, &'static str>;
 fn get_all_commands() -> Vec<Executor<EmployeeStoreImpl, ()>> {
     vec![
         add_employee,
+        delete_employee,
         list_departments,
         retrieve_all,
         retrieve_by_department,
@@ -35,6 +39,9 @@ impl<E: 'static + EmployeeStore, R> Dispatcher<E, R> {
         debug!("Checking for command matching text \"{}\"", text_command);
         for executor in &self.command_executors {
             match executor(text_command, &mut self.employee_store) {
+                // TODO - would be nice to be able to debug-message as soon as the command is matched,
+                // but to do that would need to a class-like structure where we can call the command matching
+                // before executing the actual operation (or maybe some other kind of refactoring)
                 Ok(r) =>
                     return Ok(r),
                 Err(executor_error_message) =>
@@ -48,12 +55,13 @@ impl<E: 'static + EmployeeStore, R> Dispatcher<E, R> {
 pub fn create_dispatcher() -> Dispatcher<EmployeeStoreImpl, ()> {
     Dispatcher {
         command_executors: get_all_commands(),
-        employee_store: EmployeeStoreImpl::new()
+        employee_store: EmployeeStoreImpl::new(),
     }
 }
 
 #[cfg(test)]
 mod shared_test_setup {
+    // TODO - this helper method is not that useful and a bit too clever for its own good - remove
     use crate::exercises::employee_management::employee_store::MockEmployeeStore;
 
     pub(crate) fn setup_store_mock(setup_behaviour: fn(&mut MockEmployeeStore) -> ()) -> MockEmployeeStore {
