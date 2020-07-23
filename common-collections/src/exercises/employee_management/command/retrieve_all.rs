@@ -20,7 +20,7 @@ mod tests {
     use crate::exercises::employee_management::employee_store::DepartmentInfo;
 
     use super::{NON_MATCH_ERROR, retrieve_all};
-    use super::super::shared_test_setup;
+    use super::super::super::employee_store::MockEmployeeStore;
 
     fn get_mock_return() -> Vec<DepartmentInfo> {
         vec![DepartmentInfo{ department: "Pie Analysis".to_string(), employee_names: vec![] }]
@@ -30,14 +30,12 @@ mod tests {
     fn test_retrieve_all_command_ok_with_valid() {
         testing_logger::setup();
 
-        let mut mock_store = shared_test_setup::setup_store_mock(
-            |mock| {
-                mock
-                    .expect_retrieve_all_employees()
-                    .times(1)
-                    .with()
-                    .return_const(get_mock_return());
-        });
+        let mut mock_store = MockEmployeeStore::new();
+        mock_store
+            .expect_retrieve_all_employees()
+            .times(1)
+            .with()
+            .return_const(get_mock_return());
 
         assert_eq!(
             retrieve_all(&"Retrieve all departments", &mut mock_store),
@@ -55,15 +53,12 @@ mod tests {
 
     #[test]
     fn test_retrieve_all_err_and_uncalled_with_invalid() {
-        let mut mock_store = shared_test_setup::setup_store_mock(
-            |mock| {
-                mock
-                    .expect_retrieve_all_employees()
-                    .times(0)
-                    .with()
-                    .return_const(get_mock_return());
-            });
-
+        let mut mock_store = MockEmployeeStore::new();
+        mock_store
+            .expect_retrieve_all_employees()
+            .times(0)
+            .with()
+            .return_const(get_mock_return());
         assert_eq!(
             retrieve_all(&"This is not a retrieve command!".to_string(), &mut mock_store),
             NON_MATCH_ERROR

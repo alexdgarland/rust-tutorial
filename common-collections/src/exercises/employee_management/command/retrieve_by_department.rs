@@ -40,7 +40,7 @@ mod tests {
     use mockall::predicate::eq;
 
     use super::{NON_MATCH_ERROR, retrieve_by_department};
-    use super::super::shared_test_setup;
+    use super::super::super::employee_store::MockEmployeeStore;
 
     fn get_mock_return() -> Vec<String> {
         vec!["Bob Bobertson".to_string(), "Weebl Bull".to_string()]
@@ -50,14 +50,12 @@ mod tests {
     fn test_retrieve_department_command_ok_with_valid_department_exists() {
         testing_logger::setup();
 
-        let mut mock_store = shared_test_setup::setup_store_mock(
-            |mock| {
-                mock
-                    .expect_retrieve_employees_by_department()
-                    .times(1)
-                    .with(eq("Pie Quality Control".to_string()))
-                    .return_const(Some(get_mock_return()));
-            });
+        let mut mock_store = MockEmployeeStore::new();
+         mock_store
+             .expect_retrieve_employees_by_department()
+             .times(1)
+             .with(eq("Pie Quality Control".to_string()))
+             .return_const(Some(get_mock_return()));
 
         assert_eq!(
             retrieve_by_department("Retrieve department Pie Quality Control", &mut mock_store),
@@ -77,14 +75,12 @@ mod tests {
     fn test_retrieve_department_command_ok_with_valid_department_doesnt_exist() {
         testing_logger::setup();
 
-        let mut mock_store = shared_test_setup::setup_store_mock(
-            |mock| {
-                mock
-                    .expect_retrieve_employees_by_department()
-                    .times(1)
-                    .with(eq("Pie Quality Control".to_string()))
-                    .return_const(None);
-            });
+        let mut mock_store = MockEmployeeStore::new();
+        mock_store
+            .expect_retrieve_employees_by_department()
+            .times(1)
+            .with(eq("Pie Quality Control".to_string()))
+            .return_const(None);
 
         assert_eq!(
             retrieve_by_department("Retrieve department Pie Quality Control", &mut mock_store),
@@ -102,14 +98,11 @@ mod tests {
 
     #[test]
     fn test_retrieve_department_command_err_and_uncalled_with_invalid() {
-        let mut mock_store = shared_test_setup::setup_store_mock(
-            |mock| {
-                mock
-                    .expect_retrieve_employees_by_department()
-                    .times(0)
-                    .return_const(Some(get_mock_return()));
-            });
-
+        let mut mock_store = MockEmployeeStore::new();
+        mock_store
+            .expect_retrieve_employees_by_department()
+            .times(0)
+            .return_const(Some(get_mock_return()));
         assert_eq!(
             retrieve_by_department("This is a bad command!", &mut mock_store),
             NON_MATCH_ERROR

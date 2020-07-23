@@ -41,23 +41,20 @@ mod tests {
     use mockall::predicate::eq;
 
     use super::{add_employee, NON_MATCH_ERROR};
-    use super::super::shared_test_setup;
+    use super::super::super::employee_store::MockEmployeeStore;
 
     #[test]
     fn test_add_command_ok_with_valid() {
         testing_logger::setup();
 
-        let mut mock_store = shared_test_setup::setup_store_mock(
-            |mock| {
-                mock
-                    .expect_add_employee()
-                    .times(1)
-                    .with(
-                        eq(String::from("Bob Bobertson")),
-                        eq(String::from("Pie Quality Control")),
-                    ).return_const(());
-            });
-
+        let mut mock_store = MockEmployeeStore::new();
+        mock_store
+            .expect_add_employee()
+            .times(1)
+            .with(
+                eq(String::from("Bob Bobertson")),
+                eq(String::from("Pie Quality Control")),
+            ).return_const(());
         assert_eq!(
             add_employee("Add Bob Bobertson to Pie Quality Control", &mut mock_store),
             Ok(())
@@ -72,14 +69,11 @@ mod tests {
 
     #[test]
     fn test_add_command_err_and_uncalled_with_invalid() {
-        let mut mock_store = shared_test_setup::setup_store_mock(
-            |mock| {
-                mock
-                    .expect_add_employee()
-                    .times(0)
-                    .return_const(());
-            });
-
+        let mut mock_store = MockEmployeeStore::new();
+        mock_store
+            .expect_add_employee()
+            .times(0)
+            .return_const(());
         assert_eq!(
             add_employee("This is not an add command!", &mut mock_store),
             NON_MATCH_ERROR

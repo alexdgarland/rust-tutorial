@@ -60,18 +60,6 @@ pub fn create_dispatcher() -> Dispatcher<EmployeeStoreImpl, ()> {
 }
 
 #[cfg(test)]
-mod shared_test_setup {
-    // TODO - this helper method is not that useful and a bit too clever for its own good - remove
-    use crate::exercises::employee_management::employee_store::MockEmployeeStore;
-
-    pub(crate) fn setup_store_mock(setup_behaviour: fn(&mut MockEmployeeStore) -> ()) -> MockEmployeeStore {
-        let mut mock_store = MockEmployeeStore::new();
-        setup_behaviour(&mut mock_store);
-        mock_store
-    }
-}
-
-#[cfg(test)]
 mod tests {
     use log::Level::Debug;
     use testing_logger::CapturedLog;
