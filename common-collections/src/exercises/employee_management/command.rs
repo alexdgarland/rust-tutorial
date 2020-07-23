@@ -1,14 +1,12 @@
-
-mod add_employee;
-mod delete_employee;
+mod employee;
 mod list_departments;
 mod retrieve_by_department;
 mod retrieve_all;
 
 use std::result::Result;
 
-use add_employee::add_employee;
-use delete_employee::delete_employee;
+use employee::add_employee::add_employee;
+use employee::delete_employee::delete_employee;
 use list_departments::list_departments;
 use retrieve_all::retrieve_all;
 use retrieve_by_department::retrieve_by_department;

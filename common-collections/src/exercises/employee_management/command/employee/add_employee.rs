@@ -1,36 +1,26 @@
-use regex::{Captures, Regex};
-
+use regex::Regex;
 use lazy_static::lazy_static;
 
 use crate::exercises::employee_management::employee_store::EmployeeStore;
+use super::{parse_employee_command, EmployeeCommandParameters};
 
 static NON_MATCH_ERROR: Result<(), &str> = Err("Text command did not match pattern to add employee");
 
+lazy_static! {
+    static ref ADD_EMPLOYEE_REGEX: Regex =
+        Regex::new(r"^Add (?P<employee_name>.*) to (?P<department>.*)$").unwrap();
+}
+
 pub fn add_employee<E: EmployeeStore>(command: &str, employee_store: &mut E) -> Result<(), &'static str>
 {
-    lazy_static! {
-            static ref ADD_EMPLOYEE_REGEX: Regex =
-                Regex::new(r"^Add (?P<employee_name>.*) to (?P<department>.*)$").unwrap();
-        }
-
-    fn extract_fields(captures: Captures) -> Option<(Option<String>, Option<String>)> {
-        let extract = |key: &str|
-            captures
-                .name(key)
-                .map(|m| m.as_str().to_string());
-
-        Some((extract("employee_name"), extract("department")))
-    }
-
-    match ADD_EMPLOYEE_REGEX.captures(&command[..]).and_then(extract_fields)
-    {
-        Some((Some(employee_name), Some(department))) => {
-            info!("Adding employee \"{}\" to department \"{}\"", employee_name, department);
-            employee_store.add_employee(&employee_name, &department);
+    match parse_employee_command(command, &*ADD_EMPLOYEE_REGEX) {
+        None =>
+            NON_MATCH_ERROR,
+        Some(params) => {
+            info!("Adding employee \"{}\" to department \"{}\"", params.employee_name, params.department);
+            employee_store.add_employee(&params.employee_name, &params.department);
             Ok(())
         }
-        _ =>
-            NON_MATCH_ERROR
     }
 }
 
@@ -41,7 +31,7 @@ mod tests {
     use mockall::predicate::eq;
 
     use super::{add_employee, NON_MATCH_ERROR};
-    use super::super::super::employee_store::MockEmployeeStore;
+    use super::super::super::super::employee_store::MockEmployeeStore;
 
     #[test]
     fn test_add_command_ok_with_valid() {

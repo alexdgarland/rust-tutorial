@@ -1,33 +1,27 @@
-use regex::{Captures, Regex};
-
+use regex::Regex;
 use lazy_static::lazy_static;
 
 use crate::exercises::employee_management::employee_store::EmployeeStore;
 use crate::exercises::employee_management::employee_store::EmployeeDeletionResult::{
-    SuccessfullyDeleted, NoSuchDepartment, EmployeeNotInDepartment
+    SuccessfullyDeleted, NoSuchDepartment, EmployeeNotInDepartment,
 };
+
+use super::{parse_employee_command, EmployeeCommandParameters};
 
 static NON_MATCH_ERROR: Result<(), &str> = Err("Text command did not match pattern to delete employee");
 
+lazy_static! {
+    static ref DELETE_EMPLOYEE_REGEX: Regex =
+        Regex::new(r"^Delete (?P<employee_name>.*) from (?P<department>.*)$").unwrap();
+}
+
 pub fn delete_employee<E: EmployeeStore>(command: &str, employee_store: &mut E) -> Result<(), &'static str>
 {
-    lazy_static! {
-            static ref DELETE_EMPLOYEE_REGEX: Regex =
-                Regex::new(r"^Delete (?P<employee_name>.*) from (?P<department>.*)$").unwrap();
-        }
-
-    fn extract_fields(captures: Captures) -> Option<(Option<String>, Option<String>)> {
-        let extract = |key: &str|
-            captures
-                .name(key)
-                .map(|m| m.as_str().to_string());
-
-        Some((extract("employee_name"), extract("department")))
-    }
-
-    match DELETE_EMPLOYEE_REGEX.captures(&command[..]).and_then(extract_fields)
-    {
-        Some((Some(employee_name), Some(department))) => {
+    match parse_employee_command(command, &*DELETE_EMPLOYEE_REGEX) {
+        None =>
+            NON_MATCH_ERROR,
+        Some(params) => {
+            let EmployeeCommandParameters { employee_name, department } = params;
             info!("Deleting employee \"{}\" from department \"{}\"", employee_name, department);
             match employee_store.delete_employee(&employee_name, &department) {
                 SuccessfullyDeleted =>
@@ -36,12 +30,9 @@ pub fn delete_employee<E: EmployeeStore>(command: &str, employee_store: &mut E) 
                     info!("Department \"{}\" does not exist", department),
                 EmployeeNotInDepartment =>
                     info!("Employee \"{}\" does not exist in department \"{}\"", employee_name, department),
-
             }
             Ok(())
         }
-        _ =>
-            NON_MATCH_ERROR
     }
 }
 
@@ -52,15 +43,15 @@ mod tests {
     use mockall::predicate::eq;
 
     use super::{delete_employee, NON_MATCH_ERROR};
-    use super::super::super::employee_store::MockEmployeeStore;
+    use super::super::super::super::employee_store::MockEmployeeStore;
     use crate::exercises::employee_management::employee_store::EmployeeDeletionResult::{
-        SuccessfullyDeleted, NoSuchDepartment, EmployeeNotInDepartment
+        SuccessfullyDeleted, NoSuchDepartment, EmployeeNotInDepartment,
     };
     use crate::exercises::employee_management::employee_store::EmployeeDeletionResult;
 
     fn test_helper_handle_ok_execution(
         mock_store_deletion_result: EmployeeDeletionResult,
-        expected_post_result_log_message: &str
+        expected_post_result_log_message: &str,
     ) {
         testing_logger::setup();
 
@@ -93,7 +84,7 @@ mod tests {
     fn test_delete_command_ok_with_valid_command_everything_exists() {
         test_helper_handle_ok_execution(
             SuccessfullyDeleted,
-            "Successfully deleted employee \"Bob Bobertson\" from department \"Pie Quality Control\""
+            "Successfully deleted employee \"Bob Bobertson\" from department \"Pie Quality Control\"",
         )
     }
 
@@ -101,15 +92,15 @@ mod tests {
     fn test_delete_command_ok_with_valid_command_department_doesnt_exist() {
         test_helper_handle_ok_execution(
             NoSuchDepartment,
-            "Department \"Pie Quality Control\" does not exist"
+            "Department \"Pie Quality Control\" does not exist",
         )
-     }
+    }
 
     #[test]
     fn test_delete_command_ok_with_valid_command_employee_doesnt_exist() {
         test_helper_handle_ok_execution(
             EmployeeNotInDepartment,
-            "Employee \"Bob Bobertson\" does not exist in department \"Pie Quality Control\""
+            "Employee \"Bob Bobertson\" does not exist in department \"Pie Quality Control\"",
         )
     }
 
@@ -125,5 +116,4 @@ mod tests {
             NON_MATCH_ERROR
         );
     }
-
 }
