@@ -1,3 +1,4 @@
+mod dispatcher;
 mod employee;
 mod list_departments;
 mod retrieve_by_department;
