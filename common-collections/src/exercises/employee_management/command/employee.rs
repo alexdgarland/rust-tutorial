@@ -16,8 +16,8 @@ fn extract_fields(captures: Captures) -> Option<(Option<String>, Option<String>)
     Some((extract("employee_name"), extract("department")))
 }
 
-/// Try matching against a command against a regex,
-/// specifically of such a format that we expect to be able to extract elements for employee_name and department
+/// Try matching command against a regex, specifically of such a format
+/// that we expect to be able to extract elements for employee_name and department
 pub fn parse_employee_command(command: &str, command_regex: &Regex) -> Option<EmployeeCommandParameters>
 {
     match command_regex

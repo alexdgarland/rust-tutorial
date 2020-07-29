@@ -2,7 +2,6 @@ use regex::Regex;
 use lazy_static::lazy_static;
 
 use crate::exercises::employee_management::employee_store::EmployeeStore;
-use super::{parse_employee_command, EmployeeCommandParameters};
 
 static NON_MATCH_ERROR: Result<(), &str> = Err("Text command did not match pattern to add employee");
 
@@ -13,7 +12,7 @@ lazy_static! {
 
 pub fn add_employee<E: EmployeeStore>(command: &str, employee_store: &mut E) -> Result<(), &'static str>
 {
-    match parse_employee_command(command, &*ADD_EMPLOYEE_REGEX) {
+    match super::parse_employee_command(command, &*ADD_EMPLOYEE_REGEX) {
         None =>
             NON_MATCH_ERROR,
         Some(params) => {
