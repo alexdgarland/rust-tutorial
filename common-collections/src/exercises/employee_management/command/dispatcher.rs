@@ -1,17 +1,7 @@
-use std::collections::HashMap;
 use crate::exercises::employee_management::employee_store::EmployeeStore;
 use CommandProcessingResult::{Success, NoMatchingHandlerFound, HandlerExecutionFailed};
+use super::handler::CommandHandler;
 
-type ParsedArgMap = HashMap<String, String>;
-type CommandMatcher = fn(&str) -> Option<ParsedArgMap>;
-type CommandExecutor<E> = fn(ParsedArgMap, &mut E) -> Result<(), &'static str>;
-
-struct CommandHandler<E: EmployeeStore> {
-    // description field is used simply to show dispatcher usage options
-    match_pattern_description: &'static str,
-    matcher: CommandMatcher,
-    executor: CommandExecutor<E>,
-}
 // TODO - rewrite existing command functions to match this struct pattern
 
 pub struct CommandDispatcher<E: 'static + EmployeeStore> {
@@ -64,12 +54,12 @@ impl<E: 'static + EmployeeStore> CommandDispatcher<E> {
 
 #[cfg(test)]
 mod tests {
-    use super::{CommandDispatcher, CommandHandler, CommandExecutor, CommandMatcher, CommandProcessingResult};
-    use super::CommandProcessingResult::{Success, NoMatchingHandlerFound};
+    use super::super::handler::{CommandHandler, CommandExecutor, CommandMatcher};
+    use super::{CommandDispatcher, CommandProcessingResult};
+    use super::CommandProcessingResult::{Success, NoMatchingHandlerFound, HandlerExecutionFailed};
     use crate::exercises::employee_management::employee_store::MockEmployeeStore;
     use std::collections::HashMap;
     use log::Level::Debug;
-    use crate::exercises::employee_management::command::dispatcher::CommandProcessingResult::HandlerExecutionFailed;
 
     static COMMAND: &str = "Some command";
 
