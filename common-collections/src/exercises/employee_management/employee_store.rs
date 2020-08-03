@@ -20,6 +20,7 @@ pub enum EmployeeDeletionResult {
 }
 
 #[automock]
+// #[derive(Eq, PartialEq, Debug)]
 pub trait EmployeeStore {
     fn add_employee(&mut self, employee_name: &String, department: &String);
 

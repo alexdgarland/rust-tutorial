@@ -29,6 +29,13 @@ static MATCHER_ADD_EMPLOYEE: CommandMatcher = |command_text| {
         })
 };
 
+fn executor_add_employee<E: EmployeeStore>(arg_map: ParsedArgMap, store: &mut E) -> Result<(), &str> {
+    store.add_employee(
+        arg_map.get("employee_name").unwrap(),
+        arg_map.get("department").unwrap()
+    );
+    Ok(())
+}
 
 // pub static ADD_EMPLOYEE_HANDLER: CommandHandler<E: EmployeeStore> = CommandHandler {
 //     match_pattern_description: "Add (employee name) to (department name)",
@@ -40,18 +47,39 @@ static MATCHER_ADD_EMPLOYEE: CommandMatcher = |command_text| {
 mod tests {
     use crate::exercises::employee_management::command::handler::add_employee::MATCHER_ADD_EMPLOYEE;
     use std::collections::HashMap;
+    use crate::exercises::employee_management::command::handler::ParsedArgMap;
+    use mockall::predicate::eq;
+    use crate::exercises::employee_management::employee_store::MockEmployeeStore;
+
+    fn get_arg_map() -> ParsedArgMap {
+        let mut map: ParsedArgMap = HashMap::new();
+        map.insert("employee_name".to_string(), "Bob Bobertson".to_string());
+        map.insert("department".to_string(), "Pie Quality Control".to_string());
+        map
+    }
 
     #[test]
     fn test_matcher_handles_matching_pattern() {
-        let mut expected_map = HashMap::new();
-        expected_map.insert("employee_name".to_string(), "Bob Bobertson".to_string());
-        expected_map.insert("department".to_string(), "Pie Quality Control".to_string());
-        assert_eq!(MATCHER_ADD_EMPLOYEE("Add Bob Bobertson to Pie Quality Control"), Some(expected_map));
+        assert_eq!(MATCHER_ADD_EMPLOYEE("Add Bob Bobertson to Pie Quality Control"), Some(get_arg_map()));
     }
 
     #[test]
     fn test_matcher_handles_non_matching_pattern() {
         assert_eq!(MATCHER_ADD_EMPLOYEE("Add Bob Bobertson into the Pie Quality Control department"), None);
+    }
+
+    #[test]
+    fn test_executor_calls_expected_method_on_store() {
+        let mut mock_store = MockEmployeeStore::new();
+        mock_store
+            .expect_add_employee()
+            .times(1)
+            .with(
+                eq(String::from("Bob Bobertson")),
+                eq(String::from("Pie Quality Control")),
+            ).return_const(());
+
+        super::executor_add_employee(get_arg_map(), &mut mock_store);
     }
 
 }
