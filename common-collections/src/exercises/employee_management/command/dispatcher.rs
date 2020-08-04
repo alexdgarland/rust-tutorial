@@ -28,7 +28,7 @@ impl<E: 'static + EmployeeStore, H: HandleCommand<E>> CommandDispatcher<E, H> {
 
         for handler in &self.command_handlers {
             if handler.matches_command_text(command_text) {
-                return match handler.execute(command_text, &mut self.employee_store) {
+                return match handler.execute_command(command_text, &mut self.employee_store) {
                     Ok(()) =>
                         Success,
                     Err(error_message) => {
@@ -79,7 +79,7 @@ mod tests {
 
         fn with_execute_is_called_expectation(mut self, return_value: Result<(), &'static str>) -> MockHandler {
             self
-                .expect_execute()
+                .expect_execute_command()
                 .times(1)
                 .with(eq(COMMAND), eq(EmployeeStoreImpl::new()))
                 .return_const(return_value);
@@ -87,7 +87,7 @@ mod tests {
         }
 
         fn with_execute_not_called_expectation(mut self) -> MockHandler {
-            self.expect_execute().times(0);
+            self.expect_execute_command().times(0);
             self
         }
 
