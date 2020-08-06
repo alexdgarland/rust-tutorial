@@ -48,7 +48,7 @@ impl<E: 'static + EmployeeStore, H: HandleCommand<E>> CommandDispatcher<E, H> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::handler::{CommandHandler, CommandExecutor, CommandMatcher, MockHandleCommand};
+    use super::super::handler::{CommandHandler, CommandExecutor, MockHandleCommand};
     use super::{CommandDispatcher, CommandProcessingResult};
     use super::CommandProcessingResult::{Success, NoMatchingHandlerFound, HandlerExecutionFailed};
     use crate::exercises::employee_management::employee_store::{MockEmployeeStore, EmployeeStoreImpl};

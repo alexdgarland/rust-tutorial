@@ -6,7 +6,6 @@ use mockall_derive::automock;
 use regex::{Regex, Captures};
 
 pub type ParsedArgMap = HashMap<String, String>;
-pub type CommandMatcher = fn(&str) -> Option<ParsedArgMap>; // TODO - delete once all usages removed
 pub type CommandExecutor<E> = fn(ParsedArgMap, &mut E) -> Result<(), &'static str>;
 
 static NON_PARSEABLE_ERROR: Result<(), &str> = Err("Could not parse expected args from command by matching expected pattern");
@@ -23,6 +22,24 @@ pub struct CommandHandler<E: EmployeeStore> {
     matcher_regex: Regex,
     expected_args: Vec<String>,
     executor: CommandExecutor<E>,
+}
+
+impl<E: EmployeeStore> CommandHandler<E> {
+
+    pub fn new(match_pattern_description: &'static str,
+              matcher_regex: Regex,
+              expected_args: Vec<&str>,
+              executor: CommandExecutor<E>
+    ) -> CommandHandler<E> {
+        let expected_args_ownable: Vec<String> = expected_args.iter().map(|s| s.to_string()).collect();
+        CommandHandler {
+            match_pattern_description,
+            matcher_regex,
+            expected_args: expected_args_ownable,
+            executor
+        }
+    }
+
 }
 
 fn extract_args(regex: &Regex, expected_args: &Vec<String>, command_text: &str) -> Option<ParsedArgMap> {
