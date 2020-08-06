@@ -9,91 +9,131 @@ pub type ParsedArgMap = HashMap<String, String>;
 pub type CommandMatcher = fn(&str) -> Option<ParsedArgMap>; // TODO - delete once all usages removed
 pub type CommandExecutor<E> = fn(ParsedArgMap, &mut E) -> Result<(), &'static str>;
 
+static NON_PARSEABLE_ERROR: Result<(), &str> = Err("Could not parse expected args from command by matching expected pattern");
+
 #[automock]
 pub trait HandleCommand<E: 'static + EmployeeStore> {
     fn matches_command_text(&self, command_text: &str) -> bool;
-    // When succeeds in struct impl - log  debug!("Successfully matched pattern \"{}\"", handler.match_pattern_description);
-    // When fails -     debug!("Did not match pattern \"{}\"", handler.match_pattern_description)
     fn execute_command(&self, command_text: &str, employee_store: &mut E) -> Result<(), &'static str>;
 }
 
 pub struct CommandHandler<E: EmployeeStore> {
-    // description field is used simply to show dispatcher usage options
+    // description field is used simply to show dispatcher usage options - TODO could be segregated behind another interface
     pub match_pattern_description: &'static str,
     matcher_regex: Regex,
     expected_args: Vec<String>,
     executor: CommandExecutor<E>,
 }
 
-impl<E: EmployeeStore> CommandHandler<E> {
-
-    fn extract_args(self, command_text: &str) -> Option<ParsedArgMap> {
-        let _captures_to_args = |captures: Captures| -> Option<ParsedArgMap> {
-            let mut args_map = ParsedArgMap::new();
-            for arg_key in self.expected_args.clone() {
-                let arg_value = captures.name(&arg_key).map(|m| m.as_str().to_string()).unwrap();
-                args_map.insert(arg_key.to_string(), arg_value);
-            }
-            Some(args_map)
-        };
-
-        self.matcher_regex
-            .captures(command_text)
-            .and_then((_captures_to_args))
-    }
-
+fn extract_args(regex: &Regex, expected_args: &Vec<String>, command_text: &str) -> Option<ParsedArgMap> {
+    let _captures_to_args = |captures: Captures| -> Option<ParsedArgMap> {
+        let mut args_map = ParsedArgMap::new();
+        for arg_key in expected_args {
+            let arg_value = captures.name(&arg_key).map(|m| m.as_str().to_string()).unwrap();
+            args_map.insert(arg_key.to_string(), arg_value);
+        }
+        Some(args_map)
+    };
+    regex
+        .captures(command_text)
+        .and_then((_captures_to_args))
 }
 
 impl<E: 'static + EmployeeStore> HandleCommand<E> for CommandHandler<E> {
     fn matches_command_text(&self, command_text: &str) -> bool {
-        self.matcher_regex.is_match(command_text)
+        let result = self.matcher_regex.is_match(command_text);
+        let result_description = if result { "successfully matched" } else { "did not match" };
+        debug!("Command text {} pattern \"{}\"", result_description, self.match_pattern_description);
+        result
     }
 
-    // TODO - implement method under TDD
     fn execute_command(&self, command_text: &str, employee_store: &mut E) -> Result<(), &'static str> {
-        unimplemented!()
+        match extract_args(&self.matcher_regex, &self.expected_args, command_text) {
+            Some(arg_map) =>
+                (self.executor)(arg_map.clone(), employee_store),
+            None =>
+                NON_PARSEABLE_ERROR
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
 
-    use super::CommandHandler;
     use regex::Regex;
+    use log::Level;
     use crate::exercises::employee_management::employee_store::EmployeeStoreImpl;
-    use crate::exercises::employee_management::command::handler::{CommandExecutor, ParsedArgMap, HandleCommand};
+    use super::{CommandHandler, CommandExecutor, ParsedArgMap, HandleCommand, NON_PARSEABLE_ERROR};
+
+    static MATCHING_COMMAND: &str = "Do something with value 1 and value 2";
+    static NON_MATCHING_COMMAND: &str = "Handle value 1, also value 2";
+    static STUB_EXECUTOR_RETURN: Result<(), &str> = Err("Some error occurred according to stub executor");
+    static STUB_EXECUTOR: CommandExecutor<EmployeeStoreImpl> = |arg_map: ParsedArgMap, store: &mut EmployeeStoreImpl| {
+        assert_eq!(arg_map, get_test_arg_map());
+        assert_eq!(*store, EmployeeStoreImpl::new());
+        STUB_EXECUTOR_RETURN
+    };
+
+    fn get_test_arg_map() -> ParsedArgMap {
+        let mut args = ParsedArgMap::new();
+        args.insert("arg_1".to_string(), "value 1".to_string());
+        args.insert("arg_2".to_string(), "value 2".to_string());
+        args
+    }
 
     fn get_test_handler() -> CommandHandler<EmployeeStoreImpl> {
         CommandHandler {
-            match_pattern_description: "",
-            matcher_regex: Regex::new(r"^Add (?P<employee_name>.*) to (?P<department>.*)$").unwrap(),
-            expected_args: vec!["employee_name".to_string(), "department".to_string()],
-            executor: |_command: ParsedArgMap, _store: &mut EmployeeStoreImpl| Ok(())
+            match_pattern_description: "Do something with (argument 1) and (argument 2)",
+            matcher_regex: Regex::new(r"^Do something with (?P<arg_1>.*) and (?P<arg_2>.*)$").unwrap(),
+            expected_args: vec!["arg_1".to_string(), "arg_2".to_string()],
+            executor: STUB_EXECUTOR
         }
     }
 
-    #[test]
-    fn test_extract_args() {
-
-        let actual_args = get_test_handler()
-            .extract_args("Add Bob Bobertson to Pie Quality Control");
-
-        let mut expected_args = ParsedArgMap::new();
-        expected_args.insert("employee_name".to_string(), "Bob Bobertson".to_string());
-        expected_args.insert("department".to_string(), "Pie Quality Control".to_string());
-
-        assert_eq!(actual_args, Some(expected_args));
-
+    fn run_test_against_matcher(command_text: &str, expected_return: bool, expected_log_message: &str) {
+        testing_logger::setup();
+        assert_eq!(
+            get_test_handler().matches_command_text(command_text),
+            expected_return
+        );
+        testing_logger::validate(|captured_logs| {
+            assert_eq!(captured_logs.len(), 1);
+            assert_eq!(captured_logs[0].body, expected_log_message);
+            assert_eq!(captured_logs[0].level, Level::Debug);
+        });
     }
 
     #[test]
     fn test_matches_command_text_true() {
-        assert!(get_test_handler().matches_command_text("Add Bob Bobertson to Pie Quality Control"));
+        run_test_against_matcher(
+            MATCHING_COMMAND, true,
+            "Command text successfully matched pattern \"Do something with (argument 1) and (argument 2)\""
+        );
     }
 
     #[test]
     fn test_matches_command_text_false() {
-        assert_eq!(get_test_handler().matches_command_text("Add Bob into some department"), false);
+        run_test_against_matcher(
+            NON_MATCHING_COMMAND, false,
+            "Command text did not match pattern \"Do something with (argument 1) and (argument 2)\""
+        );
+    }
+
+    fn run_test_against_executor(command_text: &str, expected_return: Result<(), &str>) {
+        assert_eq!(
+            get_test_handler().execute_command(command_text, &mut EmployeeStoreImpl::new()),
+            expected_return
+        );
+    }
+
+    #[test]
+    fn test_calls_executor_matching_command() {
+        run_test_against_executor(MATCHING_COMMAND, STUB_EXECUTOR_RETURN);
+    }
+
+    #[test]
+    fn test_calls_executor_non_matching_command() {
+        run_test_against_executor(NON_MATCHING_COMMAND, NON_PARSEABLE_ERROR);
     }
 
 }
