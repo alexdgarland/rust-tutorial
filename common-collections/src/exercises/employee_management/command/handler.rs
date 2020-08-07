@@ -1,3 +1,4 @@
+mod list_departments;
 mod delete_employee;
 mod add_employee;
 
