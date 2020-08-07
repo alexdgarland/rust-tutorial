@@ -1,3 +1,5 @@
+mod retrieve_employees_by_department;
+mod retrieve_all_employees;
 mod list_departments;
 mod delete_employee;
 mod add_employee;
