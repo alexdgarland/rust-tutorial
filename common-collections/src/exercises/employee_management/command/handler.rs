@@ -1,3 +1,4 @@
+mod delete_employee;
 mod add_employee;
 
 use std::collections::HashMap;
@@ -25,21 +26,19 @@ pub struct CommandHandler<E: EmployeeStore> {
 }
 
 impl<E: EmployeeStore> CommandHandler<E> {
-
     pub fn new(match_pattern_description: &'static str,
-              matcher_regex: Regex,
-              expected_args: Vec<&str>,
-              executor: CommandExecutor<E>
+               matcher_regex: Regex,
+               expected_args: Vec<&str>,
+               executor: CommandExecutor<E>,
     ) -> CommandHandler<E> {
         let expected_args_ownable: Vec<String> = expected_args.iter().map(|s| s.to_string()).collect();
         CommandHandler {
             match_pattern_description,
             matcher_regex,
             expected_args: expected_args_ownable,
-            executor
+            executor,
         }
     }
-
 }
 
 fn extract_args(regex: &Regex, expected_args: &Vec<String>, command_text: &str) -> Option<ParsedArgMap> {
@@ -53,7 +52,7 @@ fn extract_args(regex: &Regex, expected_args: &Vec<String>, command_text: &str) 
     };
     regex
         .captures(command_text)
-        .and_then((_captures_to_args))
+        .and_then(_captures_to_args)
 }
 
 impl<E: 'static + EmployeeStore> HandleCommand<E> for CommandHandler<E> {
@@ -76,7 +75,6 @@ impl<E: 'static + EmployeeStore> HandleCommand<E> for CommandHandler<E> {
 
 #[cfg(test)]
 mod tests {
-
     use regex::Regex;
     use log::Level;
     use crate::exercises::employee_management::employee_store::EmployeeStoreImpl;
@@ -103,7 +101,7 @@ mod tests {
             match_pattern_description: "Do something with (argument 1) and (argument 2)",
             matcher_regex: Regex::new(r"^Do something with (?P<arg_1>.*) and (?P<arg_2>.*)$").unwrap(),
             expected_args: vec!["arg_1".to_string(), "arg_2".to_string()],
-            executor: STUB_EXECUTOR
+            executor: STUB_EXECUTOR,
         }
     }
 
@@ -124,7 +122,7 @@ mod tests {
     fn test_matches_command_text_true() {
         run_test_against_matcher(
             MATCHING_COMMAND, true,
-            "Command text successfully matched pattern \"Do something with (argument 1) and (argument 2)\""
+            "Command text successfully matched pattern \"Do something with (argument 1) and (argument 2)\"",
         );
     }
 
@@ -132,7 +130,7 @@ mod tests {
     fn test_matches_command_text_false() {
         run_test_against_matcher(
             NON_MATCHING_COMMAND, false,
-            "Command text did not match pattern \"Do something with (argument 1) and (argument 2)\""
+            "Command text did not match pattern \"Do something with (argument 1) and (argument 2)\"",
         );
     }
 
@@ -152,5 +150,4 @@ mod tests {
     fn test_calls_executor_non_matching_command() {
         run_test_against_executor(NON_MATCHING_COMMAND, NON_PARSEABLE_ERROR);
     }
-
 }

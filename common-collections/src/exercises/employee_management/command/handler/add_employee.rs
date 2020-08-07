@@ -1,16 +1,15 @@
-use super::{ParsedArgMap, CommandHandler};
+use super::{ParsedArgMap, CommandHandler, CommandExecutor};
 use crate::exercises::employee_management::employee_store::EmployeeStore;
 use regex::Regex;
-
 
 const MATCH_PATTERN_DESCRIPTION: &'static str = "Add (employee name) to (department name)";
 const REGEX_PATTERN: &'static str = r"^Add (?P<employee_name>.*) to (?P<department>.*)$";
 
 pub fn get_add_employee_handler<E: EmployeeStore>() -> CommandHandler<E> {
-    let executor = | arg_map: ParsedArgMap, store: & mut E | {
+    let executor: CommandExecutor<E> = |arg_map: ParsedArgMap, store: &mut E| {
         store.add_employee(
             arg_map.get("employee_name").unwrap(),
-            arg_map.get("department").unwrap()
+            arg_map.get("department").unwrap(),
         );
         Ok(())
     };
@@ -19,7 +18,7 @@ pub fn get_add_employee_handler<E: EmployeeStore>() -> CommandHandler<E> {
         MATCH_PATTERN_DESCRIPTION,
         Regex::new(REGEX_PATTERN).unwrap(),
         vec!["employee_name", "department"],
-        executor
+        executor,
     )
 }
 
@@ -65,5 +64,4 @@ mod tests {
 
         assert_eq!(result, Ok(()));
     }
-
 }
