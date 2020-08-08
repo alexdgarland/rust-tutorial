@@ -1,5 +1,5 @@
 use super::{ParsedArgMap, CommandHandler, CommandExecutor};
-use crate::exercises::employee_management::employee_store::EmployeeStore;
+use crate::employee_store::EmployeeStore;
 use regex::Regex;
 
 const MATCH_PATTERN_DESCRIPTION: &'static str = "Retrieve all departments";
@@ -27,9 +27,9 @@ pub fn get_handler<E: EmployeeStore>() -> CommandHandler<E> {
 #[cfg(test)]
 mod tests {
     use super::get_handler;
-    use crate::exercises::employee_management::command::HandleCommand;
-    use crate::exercises::employee_management::command::handler::CommandHandler;
-    use crate::exercises::employee_management::employee_store::{MockEmployeeStore, DepartmentInfo};
+    use crate::command::HandleCommand;
+    use crate::command::handler::CommandHandler;
+    use crate::employee_store::{MockEmployeeStore, DepartmentInfo};
     use log::Level;
 
     const MATCHING_COMMAND: &str = "Retrieve all departments";

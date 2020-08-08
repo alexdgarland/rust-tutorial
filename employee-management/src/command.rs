@@ -3,17 +3,12 @@ use std::result::Result;
 use mockall_derive::automock;
 
 use dispatcher::CommandDispatcher;
-use handler::add_employee;
-use handler::delete_employee;
-use handler::list_departments;
-use handler::retrieve_all_employees;
-use handler::retrieve_employees_by_department;
-
-use crate::exercises::employee_management::command::handler::CommandHandler;
-use crate::exercises::employee_management::employee_store::{EmployeeStore, EmployeeStoreImpl};
+use handler::CommandHandler;
+use crate::employee_store::{EmployeeStore, EmployeeStoreImpl};
+pub use dispatcher::CommandProcessingResult;
 
 mod handler;
-pub(crate) mod dispatcher;
+mod dispatcher;
 
 #[automock]
 pub trait HandleCommand<E: 'static + EmployeeStore> {
@@ -25,15 +20,7 @@ pub trait HandleCommand<E: 'static + EmployeeStore> {
 pub type ConcreteDispatcher = CommandDispatcher<EmployeeStoreImpl, CommandHandler<EmployeeStoreImpl>>;
 
 pub fn get_command_dispatcher() -> ConcreteDispatcher {
-    let command_handlers = vec![
-        add_employee::get_handler(),
-        delete_employee::get_handler(),
-        list_departments::get_handler(),
-        retrieve_all_employees::get_handler(),
-        retrieve_employees_by_department::get_handler()
-    ];
-
+    let command_handlers = handler::get_all_handlers();
     let employee_store = EmployeeStoreImpl::new();
-
     dispatcher::create_dispatcher(command_handlers, employee_store)
 }

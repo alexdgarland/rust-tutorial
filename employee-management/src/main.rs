@@ -1,12 +1,13 @@
+#[macro_use]
+extern crate log;
+extern crate simple_logger;
 
-use crate::exercises::employee_management::command::ConcreteDispatcher;
-use crate::exercises::employee_management::command::dispatcher::CommandProcessingResult::{
-    NoMatchingHandlerFound, HandlerExecutionFailed, Success
-};
-use std::io;
-
-mod employee_store;
 mod command;
+mod employee_store;
+
+use command::ConcreteDispatcher;
+use command::CommandProcessingResult::{ NoMatchingHandlerFound, HandlerExecutionFailed, Success };
+use std::io;
 
 // TODO - maybe add some additional methods - delete departments?
 
@@ -38,7 +39,9 @@ fn process_command(text_command: &str, dispatcher: &mut ConcreteDispatcher) {
     }
 }
 
-pub fn demo_employee_management() {
+fn main() {
+
+    simple_logger::init().unwrap();
 
     let mut dispatcher = command::get_command_dispatcher();
 
@@ -52,7 +55,7 @@ pub fn demo_employee_management() {
                     break;
                 }
                 if text_command == "Help" {
-                        show_usage(&dispatcher);
+                    show_usage(&dispatcher);
                 }
                 else {
                     process_command(text_command, &mut dispatcher);

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 
 use mockall_derive::automock;
-use crate::exercises::employee_management::employee_store::EmployeeDeletionResult::{
+use crate::employee_store::EmployeeDeletionResult::{
     NoSuchDepartment, EmployeeNotInDepartment, SuccessfullyDeleted
 };
 
@@ -119,7 +119,9 @@ mod tests {
     use std::collections::HashMap;
 
     use super::{DepartmentInfo, EmployeeStore, EmployeeStoreImpl};
-    use crate::exercises::employee_management::employee_store::EmployeeDeletionResult::{SuccessfullyDeleted, EmployeeNotInDepartment, NoSuchDepartment};
+    use crate::employee_store::EmployeeDeletionResult::{
+        SuccessfullyDeleted, EmployeeNotInDepartment, NoSuchDepartment
+    };
 
     fn department_one() -> String { String::from("Pie Quality Control") }
 

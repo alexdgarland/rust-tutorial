@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate log;
 extern crate simple_logger;
-extern crate testing_logger;
 
 use std::env;
 
@@ -21,7 +20,6 @@ fn main() {
             ("strings", strings::demo_strings),
             ("intlist", exercises::demo_int_list),
             ("piglatin", exercises::demo_pig_latin),
-            ("employee", exercises::demo_employee_management),
         ]
     );
 

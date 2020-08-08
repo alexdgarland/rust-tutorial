@@ -1,6 +1,6 @@
 use super::{ParsedArgMap, CommandHandler};
-use crate::exercises::employee_management::employee_store::EmployeeStore;
-use crate::exercises::employee_management::employee_store::EmployeeDeletionResult::{
+use crate::employee_store::EmployeeStore;
+use crate::employee_store::EmployeeDeletionResult::{
     SuccessfullyDeleted, NoSuchDepartment, EmployeeNotInDepartment,
 };
 use regex::Regex;
@@ -40,11 +40,11 @@ pub fn get_handler<E: EmployeeStore>() -> CommandHandler<E> {
 #[cfg(test)]
 mod tests {
     use super::get_handler;
-    use crate::exercises::employee_management::command::HandleCommand;
-    use crate::exercises::employee_management::command::handler::CommandHandler;
+    use crate::command::HandleCommand;
+    use crate::command::handler::CommandHandler;
     use mockall::predicate::eq;
-    use crate::exercises::employee_management::employee_store::{MockEmployeeStore, EmployeeDeletionResult};
-    use crate::exercises::employee_management::employee_store::EmployeeDeletionResult::{
+    use crate::employee_store::{MockEmployeeStore, EmployeeDeletionResult};
+    use crate::employee_store::EmployeeDeletionResult::{
         SuccessfullyDeleted, NoSuchDepartment, EmployeeNotInDepartment,
     };
     use log::Level;

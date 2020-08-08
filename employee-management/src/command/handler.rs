@@ -1,16 +1,29 @@
-pub(crate) mod retrieve_employees_by_department;
-pub(crate) mod retrieve_all_employees;
-pub(crate) mod list_departments;
-pub(crate) mod delete_employee;
-pub(crate) mod add_employee;
-
 use std::collections::HashMap;
-use crate::exercises::employee_management::employee_store::EmployeeStore;
-use regex::{Regex, Captures};
+
+use regex::{Captures, Regex};
+
+use crate::employee_store::EmployeeStore;
+
 use super::HandleCommand;
+
+mod add_employee;
+mod delete_employee;
+mod list_departments;
+mod retrieve_all_employees;
+mod retrieve_employees_by_department;
 
 pub type ParsedArgMap = HashMap<String, String>;
 pub type CommandExecutor<E> = fn(ParsedArgMap, &mut E) -> Result<(), &'static str>;
+
+pub fn get_all_handlers<E: EmployeeStore>() -> Vec<CommandHandler<E>> {
+    vec![
+        add_employee::get_handler(),
+        delete_employee::get_handler(),
+        list_departments::get_handler(),
+        retrieve_all_employees::get_handler(),
+        retrieve_employees_by_department::get_handler()
+    ]
+}
 
 static NON_PARSEABLE_ERROR: Result<(), &str> = Err("Could not parse expected args from command by matching expected pattern");
 
@@ -75,11 +88,13 @@ impl<E: 'static + EmployeeStore> HandleCommand<E> for CommandHandler<E> {
 
 #[cfg(test)]
 mod tests {
-    use regex::Regex;
     use log::Level;
-    use crate::exercises::employee_management::employee_store::EmployeeStoreImpl;
+    use regex::Regex;
+
+    use crate::employee_store::EmployeeStoreImpl;
+
+    use super::{CommandExecutor, CommandHandler, NON_PARSEABLE_ERROR, ParsedArgMap};
     use super::super::HandleCommand;
-    use super::{CommandHandler, CommandExecutor, ParsedArgMap, NON_PARSEABLE_ERROR};
 
     static MATCHING_COMMAND: &str = "Do something with value 1 and value 2";
     static NON_MATCHING_COMMAND: &str = "Handle value 1, also value 2";

@@ -1,5 +1,5 @@
 use super::{ParsedArgMap, CommandHandler, CommandExecutor};
-use crate::exercises::employee_management::employee_store::EmployeeStore;
+use crate::employee_store::EmployeeStore;
 use regex::Regex;
 
 const MATCH_PATTERN_DESCRIPTION: &'static str = "Add (employee name) to (department name)";
@@ -27,10 +27,10 @@ pub fn get_handler<E: EmployeeStore>() -> CommandHandler<E> {
 #[cfg(test)]
 mod tests {
     use super::get_handler;
-    use crate::exercises::employee_management::command::HandleCommand;
-    use crate::exercises::employee_management::command::handler::CommandHandler;
+    use crate::command::HandleCommand;
+    use crate::command::handler::CommandHandler;
     use mockall::predicate::eq;
-    use crate::exercises::employee_management::employee_store::MockEmployeeStore;
+    use crate::employee_store::MockEmployeeStore;
 
     const MATCHING_COMMAND: &str = "Add Bob Bobertson to Pie Quality Control";
     const NON_MATCHING_COMMAND: &'static str = "Add Bob Bobertson into the Pie Eating department";

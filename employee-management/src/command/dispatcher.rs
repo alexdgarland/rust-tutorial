@@ -1,4 +1,4 @@
-use crate::exercises::employee_management::employee_store::EmployeeStore;
+use crate::employee_store::EmployeeStore;
 use CommandProcessingResult::{Success, NoMatchingHandlerFound, HandlerExecutionFailed};
 use super::HandleCommand;
 
@@ -59,10 +59,10 @@ impl<E: 'static + EmployeeStore, H: HandleCommand<E>> CommandDispatcher<E, H> {
 mod tests {
     use super::{CommandDispatcher, CommandProcessingResult};
     use super::CommandProcessingResult::{Success, NoMatchingHandlerFound, HandlerExecutionFailed};
-    use crate::exercises::employee_management::employee_store::{MockEmployeeStore, EmployeeStoreImpl};
+    use crate::employee_store::{MockEmployeeStore, EmployeeStoreImpl};
     use log::Level::Debug;
     use mockall::predicate::eq;
-    use crate::exercises::employee_management::command::MockHandleCommand;
+    use crate::command::MockHandleCommand;
 
     static COMMAND: &str = "Some command";
 
