@@ -8,7 +8,7 @@ use regex::Regex;
 const MATCH_PATTERN_DESCRIPTION: &'static str = "Delete (employee name) from (department name)";
 const REGEX_PATTERN: &'static str = r"^Delete (?P<employee_name>.*) from (?P<department>.*)$";
 
-pub fn get_delete_employee_handler<E: EmployeeStore>() -> CommandHandler<E> {
+pub fn get_handler<E: EmployeeStore>() -> CommandHandler<E> {
     let executor = |arg_map: ParsedArgMap, store: &mut E| {
         let employee_name = arg_map.get("employee_name").unwrap();
         let department = arg_map.get("department").unwrap();
@@ -39,8 +39,9 @@ pub fn get_delete_employee_handler<E: EmployeeStore>() -> CommandHandler<E> {
 
 #[cfg(test)]
 mod tests {
-    use super::get_delete_employee_handler;
-    use crate::exercises::employee_management::command::handler::{HandleCommand, CommandHandler};
+    use super::get_handler;
+    use crate::exercises::employee_management::command::HandleCommand;
+    use crate::exercises::employee_management::command::handler::CommandHandler;
     use mockall::predicate::eq;
     use crate::exercises::employee_management::employee_store::{MockEmployeeStore, EmployeeDeletionResult};
     use crate::exercises::employee_management::employee_store::EmployeeDeletionResult::{
@@ -52,7 +53,7 @@ mod tests {
     const NON_MATCHING_COMMAND: &'static str = "Bob Bobertson shouldn't be in the Pie Eating department";
 
     fn run_test_against_matcher(command_text: &str, expected_return: bool) {
-        let test_handler: CommandHandler<MockEmployeeStore> = get_delete_employee_handler();
+        let test_handler: CommandHandler<MockEmployeeStore> = get_handler();
         assert_eq!(test_handler.matches_command_text(command_text), expected_return)
     }
 
@@ -78,7 +79,7 @@ mod tests {
                 eq(String::from("Pie Quality Control")),
             ).return_const(mock_store_return_value);
 
-        let result = get_delete_employee_handler()
+        let result = get_handler()
             .execute_command(MATCHING_COMMAND, &mut mock_store);
 
         assert_eq!(result, expected_result);

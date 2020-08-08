@@ -5,7 +5,7 @@ use regex::Regex;
 const MATCH_PATTERN_DESCRIPTION: &'static str = "List Departments";
 const REGEX_PATTERN: &'static str = r"^List departments$";
 
-pub fn get_list_departments_handler<E: EmployeeStore>() -> CommandHandler<E> {
+pub fn get_handler<E: EmployeeStore>() -> CommandHandler<E> {
     let executor: CommandExecutor<E> = |_arg_map: ParsedArgMap, store: &mut E| {
         info!("Retrieving department list");
         info!("{}", store.list_departments().join(", "));
@@ -23,17 +23,17 @@ pub fn get_list_departments_handler<E: EmployeeStore>() -> CommandHandler<E> {
 
 #[cfg(test)]
 mod tests {
-    use super::get_list_departments_handler;
-    use mockall::predicate::eq;
+    use super::get_handler;
     use crate::exercises::employee_management::employee_store::MockEmployeeStore;
     use log::Level;
-    use crate::exercises::employee_management::command::handler::{HandleCommand, CommandHandler};
+    use crate::exercises::employee_management::command::HandleCommand;
+    use crate::exercises::employee_management::command::handler::CommandHandler;
 
     const MATCHING_COMMAND: &str = "List departments";
     const NON_MATCHING_COMMAND: &'static str = "Tell me all the departments now!";
 
     fn run_test_against_matcher(command_text: &str, expected_return: bool) {
-        let test_handler: CommandHandler<MockEmployeeStore> = get_list_departments_handler();
+        let test_handler: CommandHandler<MockEmployeeStore> = get_handler();
         assert_eq!(test_handler.matches_command_text(command_text), expected_return)
     }
 
@@ -61,7 +61,7 @@ mod tests {
             .with()
             .return_const(list_departments_return);
 
-        let result = get_list_departments_handler()
+        let result = get_handler()
             .execute_command(MATCHING_COMMAND, &mut mock_store);
 
         assert_eq!(result, Ok(()));

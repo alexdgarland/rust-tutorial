@@ -1,28 +1,21 @@
-mod retrieve_employees_by_department;
-mod retrieve_all_employees;
-mod list_departments;
-mod delete_employee;
-mod add_employee;
+pub(crate) mod retrieve_employees_by_department;
+pub(crate) mod retrieve_all_employees;
+pub(crate) mod list_departments;
+pub(crate) mod delete_employee;
+pub(crate) mod add_employee;
 
 use std::collections::HashMap;
 use crate::exercises::employee_management::employee_store::EmployeeStore;
-use mockall_derive::automock;
 use regex::{Regex, Captures};
+use super::HandleCommand;
 
 pub type ParsedArgMap = HashMap<String, String>;
 pub type CommandExecutor<E> = fn(ParsedArgMap, &mut E) -> Result<(), &'static str>;
 
 static NON_PARSEABLE_ERROR: Result<(), &str> = Err("Could not parse expected args from command by matching expected pattern");
 
-#[automock]
-pub trait HandleCommand<E: 'static + EmployeeStore> {
-    fn matches_command_text(&self, command_text: &str) -> bool;
-    fn execute_command(&self, command_text: &str, employee_store: &mut E) -> Result<(), &'static str>;
-}
-
 pub struct CommandHandler<E: EmployeeStore> {
-    // description field is used simply to show dispatcher usage options - TODO could be segregated behind another interface
-    pub match_pattern_description: &'static str,
+    match_pattern_description: &'static str,
     matcher_regex: Regex,
     expected_args: Vec<String>,
     executor: CommandExecutor<E>,
@@ -74,6 +67,10 @@ impl<E: 'static + EmployeeStore> HandleCommand<E> for CommandHandler<E> {
                 NON_PARSEABLE_ERROR
         }
     }
+
+    fn describe(&self) -> String {
+        self.match_pattern_description.to_string()
+    }
 }
 
 #[cfg(test)]
@@ -81,7 +78,8 @@ mod tests {
     use regex::Regex;
     use log::Level;
     use crate::exercises::employee_management::employee_store::EmployeeStoreImpl;
-    use super::{CommandHandler, CommandExecutor, ParsedArgMap, HandleCommand, NON_PARSEABLE_ERROR};
+    use super::super::HandleCommand;
+    use super::{CommandHandler, CommandExecutor, ParsedArgMap, NON_PARSEABLE_ERROR};
 
     static MATCHING_COMMAND: &str = "Do something with value 1 and value 2";
     static NON_MATCHING_COMMAND: &str = "Handle value 1, also value 2";

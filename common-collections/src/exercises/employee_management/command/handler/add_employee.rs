@@ -5,7 +5,8 @@ use regex::Regex;
 const MATCH_PATTERN_DESCRIPTION: &'static str = "Add (employee name) to (department name)";
 const REGEX_PATTERN: &'static str = r"^Add (?P<employee_name>.*) to (?P<department>.*)$";
 
-pub fn get_add_employee_handler<E: EmployeeStore>() -> CommandHandler<E> {
+pub fn get_handler<E: EmployeeStore>() -> CommandHandler<E> {
+    // TODO - maybe return an error if employee with same name already exists?
     let executor: CommandExecutor<E> = |arg_map: ParsedArgMap, store: &mut E| {
         store.add_employee(
             arg_map.get("employee_name").unwrap(),
@@ -25,8 +26,9 @@ pub fn get_add_employee_handler<E: EmployeeStore>() -> CommandHandler<E> {
 
 #[cfg(test)]
 mod tests {
-    use super::get_add_employee_handler;
-    use crate::exercises::employee_management::command::handler::{HandleCommand, CommandHandler};
+    use super::get_handler;
+    use crate::exercises::employee_management::command::HandleCommand;
+    use crate::exercises::employee_management::command::handler::CommandHandler;
     use mockall::predicate::eq;
     use crate::exercises::employee_management::employee_store::MockEmployeeStore;
 
@@ -34,7 +36,7 @@ mod tests {
     const NON_MATCHING_COMMAND: &'static str = "Add Bob Bobertson into the Pie Eating department";
 
     fn run_test_against_matcher(command_text: &str, expected_return: bool) {
-        let test_handler: CommandHandler<MockEmployeeStore> = get_add_employee_handler();
+        let test_handler: CommandHandler<MockEmployeeStore> = get_handler();
         assert_eq!(test_handler.matches_command_text(command_text), expected_return)
     }
 
@@ -59,7 +61,7 @@ mod tests {
                 eq(String::from("Pie Quality Control")),
             ).return_const(());
 
-        let result = get_add_employee_handler()
+        let result = get_handler()
             .execute_command(MATCHING_COMMAND, &mut mock_store);
 
         assert_eq!(result, Ok(()));

@@ -5,9 +5,10 @@ use regex::Regex;
 const MATCH_PATTERN_DESCRIPTION: &'static str = "Retrieve all departments";
 const REGEX_PATTERN: &'static str = r"^Retrieve all departments$";
 
-pub fn get_retrieve_all_employees_handler<E: EmployeeStore>() -> CommandHandler<E> {
+pub fn get_handler<E: EmployeeStore>() -> CommandHandler<E> {
     let executor: CommandExecutor<E> = |_arg_map: ParsedArgMap, store: &mut E| {
         info!("Retrieving full employee list");
+        // TODO - maybe report how many items found (so we know lack of log lines for empty store is not an error, etc)
         for dept_info in store.retrieve_all_employees() {
             info!("{} - {}", dept_info.department, dept_info.employee_names.join(", "));
         }
@@ -25,9 +26,9 @@ pub fn get_retrieve_all_employees_handler<E: EmployeeStore>() -> CommandHandler<
 
 #[cfg(test)]
 mod tests {
-    use super::get_retrieve_all_employees_handler;
-    use crate::exercises::employee_management::command::handler::{HandleCommand, CommandHandler};
-    use mockall::predicate::eq;
+    use super::get_handler;
+    use crate::exercises::employee_management::command::HandleCommand;
+    use crate::exercises::employee_management::command::handler::CommandHandler;
     use crate::exercises::employee_management::employee_store::{MockEmployeeStore, DepartmentInfo};
     use log::Level;
 
@@ -35,7 +36,7 @@ mod tests {
     const NON_MATCHING_COMMAND: &'static str = "Get me all the departments!";
 
     fn run_test_against_matcher(command_text: &str, expected_return: bool) {
-        let test_handler: CommandHandler<MockEmployeeStore> = get_retrieve_all_employees_handler();
+        let test_handler: CommandHandler<MockEmployeeStore> = get_handler();
         assert_eq!(test_handler.matches_command_text(command_text), expected_return)
     }
 
@@ -69,7 +70,7 @@ mod tests {
             .times(1)
             .with().return_const(mock_return_department_infos);
 
-        let result = get_retrieve_all_employees_handler()
+        let result = get_handler()
             .execute_command(MATCHING_COMMAND, &mut mock_store);
 
         assert_eq!(result, Ok(()));

@@ -1,12 +1,16 @@
 use crate::exercises::employee_management::employee_store::EmployeeStore;
 use CommandProcessingResult::{Success, NoMatchingHandlerFound, HandlerExecutionFailed};
-use super::handler::{CommandHandler, HandleCommand};
-
-// TODO - rewrite existing command functions to match this struct pattern
+use super::HandleCommand;
 
 pub struct CommandDispatcher<E: 'static + EmployeeStore, H: HandleCommand<E>> {
     command_handlers: Vec<H>,
     employee_store: E,
+}
+
+pub fn create_dispatcher<E: 'static + EmployeeStore, H: HandleCommand<E>>(command_handlers: Vec<H>, employee_store: E)
+    -> CommandDispatcher<E, H>
+{
+    CommandDispatcher { command_handlers, employee_store }
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -16,10 +20,6 @@ pub enum CommandProcessingResult {
     HandlerExecutionFailed(String)
 }
 
-// TODO - some message like this could be used elsewhere?
-// static NO_MATCHES_ERROR_MESSAGE: &str = "No match could be found to execute the submitted text command";
-
-// TODO rewire rest of code to use this dispatcher
 impl<E: 'static + EmployeeStore, H: HandleCommand<E>> CommandDispatcher<E, H> {
 
     pub fn process_command(&mut self, command_text: &str) -> CommandProcessingResult {
@@ -43,19 +43,26 @@ impl<E: 'static + EmployeeStore, H: HandleCommand<E>> CommandDispatcher<E, H> {
         NoMatchingHandlerFound
 
     }
+
+    pub fn get_usage_text(&self) -> String {
+        let mut text = "Employee Management - valid command formats:\n".to_string();
+        for handler in &self.command_handlers {
+            text += &format!(" - \"{}\"\n", &handler.describe());
+        }
+        text
+    }
+
 }
 
 
 #[cfg(test)]
 mod tests {
-    use super::super::handler::{CommandHandler, CommandExecutor, MockHandleCommand};
     use super::{CommandDispatcher, CommandProcessingResult};
     use super::CommandProcessingResult::{Success, NoMatchingHandlerFound, HandlerExecutionFailed};
     use crate::exercises::employee_management::employee_store::{MockEmployeeStore, EmployeeStoreImpl};
-    use std::collections::HashMap;
     use log::Level::Debug;
     use mockall::predicate::eq;
-    use crate::exercises::employee_management::command::handler::HandleCommand;
+    use crate::exercises::employee_management::command::MockHandleCommand;
 
     static COMMAND: &str = "Some command";
 
@@ -185,6 +192,28 @@ mod tests {
         ];
         let expected_result = HandlerExecutionFailed("Error from the executor".to_string());
         run_test(command_handlers, expected_result, expected_log_lines);
+    }
+
+    #[test]
+    fn test_get_usage_text() {
+        let mock_handlers: Vec<MockHandleCommand<MockEmployeeStore>> = vec!["Description 1", "Description 2"]
+            .iter()
+            .map(|description| {
+                let mut handler = MockHandleCommand::new();
+                handler.expect_describe().return_const(description.to_string());
+                handler
+            })
+            .collect();
+
+        let dispatcher = CommandDispatcher {
+            command_handlers: mock_handlers,
+            employee_store: MockEmployeeStore::new()
+        };
+
+        let expected_text = "Employee Management - valid command formats:\n".to_string() +
+            " - \"Description 1\"\n - \"Description 2\"\n";
+
+        assert_eq!(dispatcher.get_usage_text(), expected_text);
     }
 
 }
