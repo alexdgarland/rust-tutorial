@@ -9,9 +9,9 @@ pub fn get_handler<E: EmployeeStore>() -> CommandHandler<E> {
     let executor: CommandExecutor<E> = |arg_map: ParsedArgMap, store: &mut E| {
         let department = arg_map.get("department").unwrap();
         info!("Retrieving employees for department \"{}\"", department);
-        // TODO - maybe report how many items found (so we know lack of log lines for empty store is not an error, etc)
         match store.retrieve_employees_by_department(department) {
             Some(employees) => {
+                info!("Number of employees found: {}", employees.len());
                 info!("{}", employees.join(", "));
                 Ok(())
             },
@@ -58,8 +58,8 @@ mod tests {
         run_test_against_matcher(NON_MATCHING_COMMAND, false);
     }
 
-    fn run_test_call_executor(mock_return_value: Option<Vec<String>>, expected_result: Result<(), &str>,
-                              expected_log_message: &str, expected_log_level: Level) {
+    fn run_test_call_executor(mock_return_value: Option<Vec<String>>, expected_handler_result: Result<(), &str>,
+                              additional_log_entries: Vec<(&str, Level)>) {
         testing_logger::setup();
 
         let mut mock_store = MockEmployeeStore::new();
@@ -69,17 +69,20 @@ mod tests {
             .with(eq(String::from("Pie Quality Control")))
             .return_const(mock_return_value);
 
-        let result = get_handler()
+        let handler_result = get_handler()
             .execute_command(MATCHING_COMMAND, &mut mock_store);
 
-        assert_eq!(result, expected_result);
+        assert_eq!(handler_result, expected_handler_result);
 
         testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), 2);
+            assert_eq!(captured_logs.len(), additional_log_entries.len() + 1);
             assert_eq!(captured_logs[0].body, "Retrieving employees for department \"Pie Quality Control\"");
             assert_eq!(captured_logs[0].level, Level::Info);
-            assert_eq!(captured_logs[1].body, expected_log_message);
-            assert_eq!(captured_logs[1].level, expected_log_level);
+            for (captured, (expected_message, expected_level))
+            in captured_logs[1..].iter().zip(&additional_log_entries) {
+                assert_eq!(&captured.body, expected_message);
+                assert_eq!(&captured.level, expected_level);
+            }
         });
     }
 
@@ -87,8 +90,10 @@ mod tests {
     fn test_executor_calls_store_handles_existing_department() {
         run_test_call_executor(Some(vec!["Bob Bobertson".to_string(), "Weebl Bull".to_string()]),
                                Ok(()),
-                               "Bob Bobertson, Weebl Bull",
-                               Level::Info
+                               vec![
+                                   ("Number of employees found: 2", Level::Info),
+                                   ("Bob Bobertson, Weebl Bull", Level::Info)
+                               ]
         );
     }
 
@@ -96,8 +101,7 @@ mod tests {
     fn test_executor_calls_store_handles_non_existent_department() {
         run_test_call_executor(None,
                                Err("Department does not exist"),
-                               "Department \"Pie Quality Control\" does not exist",
-                               Level::Warn
+                               vec![("Department \"Pie Quality Control\" does not exist", Level::Warn)]
         );
     }
 }

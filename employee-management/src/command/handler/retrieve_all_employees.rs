@@ -8,8 +8,9 @@ const REGEX_PATTERN: &'static str = r"^Retrieve all departments$";
 pub fn get_handler<E: EmployeeStore>() -> CommandHandler<E> {
     let executor: CommandExecutor<E> = |_arg_map: ParsedArgMap, store: &mut E| {
         info!("Retrieving full employee list");
-        // TODO - maybe report how many items found (so we know lack of log lines for empty store is not an error, etc)
-        for dept_info in store.retrieve_all_employees() {
+        let departments = store.retrieve_all_employees();
+        info!("Number of departments found: {}", departments.len());
+        for dept_info in departments {
             info!("{} - {}", dept_info.department, dept_info.employee_names.join(", "));
         }
         Ok(())
@@ -76,13 +77,14 @@ mod tests {
         assert_eq!(result, Ok(()));
 
         testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), 3);
+            assert_eq!(captured_logs.len(), 4);
+            for log in captured_logs {
+                assert_eq!(log.level, Level::Info);
+            }
             assert_eq!(captured_logs[0].body, "Retrieving full employee list");
-            assert_eq!(captured_logs[0].level, Level::Info);
-            assert_eq!(captured_logs[1].body, "Pie Analysis - Bob Bobertson, Weebl Bull");
-            assert_eq!(captured_logs[1].level, Level::Info);
-            assert_eq!(captured_logs[2].body, "Stealthy Buccaneering - Chris the Ninja Pirate");
-            assert_eq!(captured_logs[2].level, Level::Info);
+            assert_eq!(captured_logs[1].body, "Number of departments found: 2");
+            assert_eq!(captured_logs[2].body, "Pie Analysis - Bob Bobertson, Weebl Bull");
+            assert_eq!(captured_logs[3].body, "Stealthy Buccaneering - Chris the Ninja Pirate");
         });
     }
 }
