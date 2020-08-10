@@ -1,3 +1,10 @@
+mod add_employee;
+mod delete_department;
+mod delete_employee;
+mod list_departments;
+mod retrieve_all_employees;
+mod retrieve_employees_by_department;
+
 use std::collections::HashMap;
 
 use regex::{Captures, Regex};
@@ -6,11 +13,6 @@ use crate::employee_store::EmployeeStore;
 
 use super::HandleCommand;
 
-mod add_employee;
-mod delete_employee;
-mod list_departments;
-mod retrieve_all_employees;
-mod retrieve_employees_by_department;
 
 pub type ParsedArgMap = HashMap<String, String>;
 pub type CommandExecutor<E> = fn(ParsedArgMap, &mut E) -> Result<(), &'static str>;
@@ -18,10 +20,11 @@ pub type CommandExecutor<E> = fn(ParsedArgMap, &mut E) -> Result<(), &'static st
 pub fn get_all_handlers<E: EmployeeStore>() -> Vec<CommandHandler<E>> {
     vec![
         add_employee::get_handler(),
+        delete_department::get_handler(),
         delete_employee::get_handler(),
         list_departments::get_handler(),
         retrieve_all_employees::get_handler(),
-        retrieve_employees_by_department::get_handler()
+        retrieve_employees_by_department::get_handler(),
     ]
 }
 
@@ -54,8 +57,16 @@ fn extract_args(regex: &Regex, expected_args: &Vec<String>, command_text: &str) 
     let _captures_to_args = |captures: Captures| -> Option<ParsedArgMap> {
         let mut args_map = ParsedArgMap::new();
         for arg_key in expected_args {
-            let arg_value = captures.name(&arg_key).map(|m| m.as_str().to_string()).unwrap();
-            args_map.insert(arg_key.to_string(), arg_value);
+            match captures.name(&arg_key).map(|m| m.as_str().to_string()) {
+                Some(arg_value) => {
+                    args_map.insert(arg_key.to_string(), arg_value);
+                }
+                None =>
+                    // This should only occur when we are writing and debugging handlers (not at application runtime)
+                    //  so a panic seems valid. We're basically asserting that the "soft" type system created
+                    //  by the regex pattern and expected args (which we can't check at compile-time) is being followed.
+                    panic!("Could not find arg \"{}\" in {:?}", arg_key, captures)
+            }
         }
         Some(args_map)
     };
@@ -166,4 +177,20 @@ mod tests {
     fn test_calls_executor_non_matching_command() {
         run_test_against_executor(NON_MATCHING_COMMAND, NON_PARSEABLE_ERROR);
     }
+
+    #[test]
+    #[allow(unused_must_use)]
+    #[should_panic(expected = "Could not find arg \"arg_2\" in Captures({0: Some(\"Take value foo\"), \"arg_1\": Some(\"foo\")})")]
+    fn test_execution_panics_in_a_descriptive_way_if_expected_args_dont_match_regex_pattern() {
+        let handler = CommandHandler {
+            match_pattern_description: "",
+            matcher_regex: Regex::new(r"^Take value (?P<arg_1>.*)$").unwrap(),
+            expected_args: vec!["arg_2".to_string()],
+            executor: STUB_EXECUTOR,
+        };
+        handler.execute_command("Take value foo", &mut EmployeeStoreImpl::new());
+    }
+
+
+
 }

@@ -4,14 +4,17 @@ use crate::employee_store::EmployeeDeletionResult::{
     SuccessfullyDeleted, NoSuchDepartment, EmployeeNotInDepartment,
 };
 use regex::Regex;
+use crate::command::handler::CommandExecutor;
 
 const MATCH_PATTERN_DESCRIPTION: &'static str = "Delete (employee name) from (department name)";
 const REGEX_PATTERN: &'static str = r"^Delete (?P<employee_name>.*) from (?P<department>.*)$";
 
 pub fn get_handler<E: EmployeeStore>() -> CommandHandler<E> {
-    let executor = |arg_map: ParsedArgMap, store: &mut E| {
+
+    let executor: CommandExecutor<E> = |arg_map: ParsedArgMap, store: &mut E| {
         let employee_name = arg_map.get("employee_name").unwrap();
         let department = arg_map.get("department").unwrap();
+
         match store.delete_employee(employee_name, department) {
             NoSuchDepartment => {
                 info!("Department \"{}\" does not exist", department);
@@ -67,9 +70,11 @@ mod tests {
         run_test_against_matcher(NON_MATCHING_COMMAND, false);
     }
 
-    fn run_executor_call_test(mock_store_return_value: EmployeeDeletionResult, expected_result: Result<(), &str>,
-                              expected_log_entry: &str) {
+    fn run_executor_call_test(
+        mock_store_return_value: EmployeeDeletionResult, expected_result: Result<(), &str>, expected_log_entry: &str
+    ) {
         testing_logger::setup();
+
         let mut mock_store = MockEmployeeStore::new();
         mock_store
             .expect_delete_employee()

@@ -84,7 +84,7 @@ impl EmployeeStore for EmployeeStoreImpl {
     fn delete_department(&mut self, department: &String) -> Result<DepartmentInfo, String> {
         match self.map.get(department) {
             None => {
-                Err(department.clone())
+                Err(format!("Could not delete department \"{}\" - no such department", department))
             }
             Some(employee_names) => {
                 let deleted_department = DepartmentInfo {
@@ -242,7 +242,8 @@ mod tests {
     fn test_delete_non_existent_department() {
         let mut store = EmployeeStoreImpl::new();
         let actual_return = store.delete_department(&department_one());
-        assert_eq!(actual_return, Err(department_one()));
+        let expected_return = Err("Could not delete department \"Pie Quality Control\" - no such department".to_string());
+        assert_eq!(actual_return, expected_return);
     }
 
     #[test]

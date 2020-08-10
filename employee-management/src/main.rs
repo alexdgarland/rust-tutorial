@@ -9,11 +9,12 @@ use command::ConcreteDispatcher;
 use command::CommandProcessingResult::{ NoMatchingHandlerFound, HandlerExecutionFailed, Success };
 use std::io;
 
-// TODO - maybe add some additional methods - delete departments?
-
 fn show_usage(dispatcher: &ConcreteDispatcher) {
     info!("Showing usage");
-    println!("{}", dispatcher.get_usage_text());
+    println!("\n{}", dispatcher.get_usage_text());
+    println!("Alternatively, enter:");
+    println!(" - \"Help\" to show this usage info");
+    println!(" - \"Quit\" to exit the program\n");
 }
 
 fn get_string(message: &str) -> io::Result<String> {
