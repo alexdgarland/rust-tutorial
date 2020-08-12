@@ -82,7 +82,7 @@ mod tests {
             .with(
                 eq(String::from("Bob Bobertson")),
                 eq(String::from("Pie Quality Control")),
-            ).return_const(mock_store_return_value);
+            ).return_once(move |_emp, _dept| mock_store_return_value);
 
         let result = get_handler()
             .execute_command(MATCHING_COMMAND, &mut mock_store);

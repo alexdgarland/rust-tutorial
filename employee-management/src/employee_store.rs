@@ -6,13 +6,13 @@ use crate::employee_store::EmployeeDeletionResult::{
     NoSuchDepartment, EmployeeNotInDepartment, SuccessfullyDeleted
 };
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Debug, Clone)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Debug)]
 pub struct DepartmentInfo {
     pub department: String,
     pub employee_names: Vec<String>,
 }
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug)]
 pub enum EmployeeDeletionResult {
     SuccessfullyDeleted,
     NoSuchDepartment,

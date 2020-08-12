@@ -70,7 +70,7 @@ mod tests {
             .expect_delete_department()
             .times(1)
             .with(eq("Pie Eating".to_string()))
-            .return_const(mock_return_value);
+            .return_once(move |_dept| mock_return_value);
 
         let result = get_handler()
             .execute_command(MATCHING_COMMAND, &mut mock_store);

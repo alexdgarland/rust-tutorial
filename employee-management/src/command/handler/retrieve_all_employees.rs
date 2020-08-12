@@ -69,7 +69,8 @@ mod tests {
         mock_store
             .expect_retrieve_all_employees()
             .times(1)
-            .with().return_const(mock_return_department_infos);
+            .with()
+            .return_once(move || mock_return_department_infos);
 
         let result = get_handler()
             .execute_command(MATCHING_COMMAND, &mut mock_store);
