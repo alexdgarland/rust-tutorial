@@ -180,7 +180,7 @@ mod tests {
 
     #[test]
     #[allow(unused_must_use)]
-    #[should_panic(expected = "Could not find arg \"arg_2\" in Captures({0: Some(\"Take value foo\"), \"arg_1\": Some(\"foo\")})")]
+    #[should_panic(expected = "Could not find arg \"arg_2\" in Captures")]
     fn test_execution_panics_in_a_descriptive_way_if_expected_args_dont_match_regex_pattern() {
         let handler = CommandHandler {
             match_pattern_description: "",
@@ -190,7 +190,5 @@ mod tests {
         };
         handler.execute_command("Take value foo", &mut EmployeeStoreImpl::new());
     }
-
-
 
 }

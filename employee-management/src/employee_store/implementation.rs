@@ -1,39 +1,7 @@
 use std::collections::HashMap;
-use std::fmt::Debug;
 
-use mockall_derive::automock;
-use crate::employee_store::EmployeeDeletionResult::{
-    NoSuchDepartment, EmployeeNotInDepartment, SuccessfullyDeleted
-};
-
-#[derive(Eq, PartialEq, Ord, PartialOrd, Debug)]
-pub struct DepartmentInfo {
-    pub department: String,
-    pub employee_names: Vec<String>,
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub enum EmployeeDeletionResult {
-    SuccessfullyDeleted,
-    NoSuchDepartment,
-    EmployeeNotInDepartment,
-}
-
-#[automock]
-// #[derive(Eq, PartialEq, Debug)]
-pub trait EmployeeStore {
-    fn add_employee(&mut self, employee_name: &String, department: &String);
-
-    fn retrieve_employees_by_department(&self, department: &String) -> Option<Vec<String>>;
-
-    fn retrieve_all_employees(&self) -> Vec<DepartmentInfo>;
-
-    fn list_departments(&self) -> Vec<String>;
-
-    fn delete_department(&mut self, department: &String) -> Result<DepartmentInfo, String>;
-
-    fn delete_employee(&mut self, employee_name: &String, department: &String) -> EmployeeDeletionResult;
-}
+use super::{DepartmentInfo, EmployeeDeletionResult, EmployeeStore};
+use super::EmployeeDeletionResult::{EmployeeNotInDepartment, NoSuchDepartment, SuccessfullyDeleted};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct EmployeeStoreImpl {
@@ -114,14 +82,16 @@ impl EmployeeStore for EmployeeStoreImpl {
     }
 }
 
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
 
-    use super::{DepartmentInfo, EmployeeStore, EmployeeStoreImpl};
     use crate::employee_store::EmployeeDeletionResult::{
-        SuccessfullyDeleted, EmployeeNotInDepartment, NoSuchDepartment
+        EmployeeNotInDepartment, NoSuchDepartment, SuccessfullyDeleted,
     };
+
+    use super::{DepartmentInfo, EmployeeStore, EmployeeStoreImpl};
 
     fn department_one() -> String { String::from("Pie Quality Control") }
 
