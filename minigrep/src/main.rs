@@ -10,8 +10,7 @@ fn main() {
         process::exit(1);
     });
 
-    println!("Searching for {}", config.query);
-    println!("In file {}", config.filename);
+    println!("Searching for {} (case sensitive = {}) in file {}", config.query, config.case_sensitive, config.filename);
 
     if let Err(e) = minigrep::run(config) {
         println!("Application error: {}", e);
