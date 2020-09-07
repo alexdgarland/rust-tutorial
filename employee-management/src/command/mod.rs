@@ -5,7 +5,6 @@ use mockall_derive::automock;
 use dispatcher::CommandDispatcher;
 use handler::CommandHandler;
 use crate::employee_store::{EmployeeStore, EmployeeStoreImpl};
-pub use dispatcher::CommandProcessingResult;
 
 mod handler;
 mod dispatcher;
@@ -13,7 +12,7 @@ mod dispatcher;
 #[automock]
 pub trait HandleCommand<E: 'static + EmployeeStore> {
     fn matches_command_text(&self, command_text: &str) -> bool;
-    fn execute_command(&self, command_text: &str, employee_store: &mut E) -> Result<(), &'static str>;
+    fn execute_command(&self, command_text: &str, employee_store: &mut E) -> Result<String, String>;
     fn describe(&self) -> String;
 }
 

@@ -11,13 +11,11 @@ pub fn get_handler<E: EmployeeStore>() -> CommandHandler<E> {
         info!("Retrieving employees for department \"{}\"", department);
         match store.retrieve_employees_by_department(department) {
             Some(employees) => {
-                info!("Number of employees found: {}", employees.len());
                 info!("{}", employees.join(", "));
-                Ok(())
+                Ok(format!("Successfully found {} employees in department \"{}\"", employees.len(), department))
             },
             None => {
-                warn!("Department \"{}\" does not exist", department);
-                Err("Department does not exist")
+                Err(format!("Department \"{}\" does not exist", department))
             }
         }
     };
@@ -40,8 +38,8 @@ mod tests {
     use crate::employee_store::MockEmployeeStore;
     use log::Level;
 
-    const MATCHING_COMMAND: &str = "Retrieve department Pie Quality Control";
-    const NON_MATCHING_COMMAND: &'static str = "Tell me who works in Pie Quality Control";
+    const MATCHING_COMMAND: &str = "Retrieve department Pie QC";
+    const NON_MATCHING_COMMAND: &'static str = "Tell me who works in Pie QC";
 
     fn run_test_against_matcher(command_text: &str, expected_return: bool) {
         let test_handler: CommandHandler<MockEmployeeStore> = get_handler();
@@ -58,15 +56,18 @@ mod tests {
         run_test_against_matcher(NON_MATCHING_COMMAND, false);
     }
 
-    fn run_test_call_executor(mock_return_value: Option<Vec<String>>, expected_handler_result: Result<(), &str>,
-                              additional_log_entries: Vec<(&str, Level)>) {
+    fn run_test_call_executor(
+        mock_return_value: Option<Vec<String>>,
+        expected_handler_result: Result<String, String>,
+        additional_log_entry: Option<(&str, Level)>
+    ) {
         testing_logger::setup();
 
         let mut mock_store = MockEmployeeStore::new();
         mock_store
             .expect_retrieve_employees_by_department()
             .times(1)
-            .with(eq(String::from("Pie Quality Control")))
+            .with(eq(String::from("Pie QC")))
             .return_const(mock_return_value);
 
         let handler_result = get_handler()
@@ -75,33 +76,32 @@ mod tests {
         assert_eq!(handler_result, expected_handler_result);
 
         testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), additional_log_entries.len() + 1);
-            assert_eq!(captured_logs[0].body, "Retrieving employees for department \"Pie Quality Control\"");
+            // TODO there is a bit much switching logic here for a simple test - maybe clean up
+            assert_eq!(captured_logs.len(), if additional_log_entry.is_some() { 2 } else { 1 });
+            assert_eq!(captured_logs[0].body, "Retrieving employees for department \"Pie QC\"");
             assert_eq!(captured_logs[0].level, Level::Info);
-            for (captured, (expected_message, expected_level))
-            in captured_logs[1..].iter().zip(&additional_log_entries) {
-                assert_eq!(&captured.body, expected_message);
-                assert_eq!(&captured.level, expected_level);
+            if let Some((expected_message, expected_level)) = additional_log_entry {
+                assert_eq!(captured_logs[1].body, expected_message);
+                assert_eq!(captured_logs[1].level, expected_level);
             }
         });
     }
 
     #[test]
     fn test_executor_calls_store_handles_existing_department() {
-        run_test_call_executor(Some(vec!["Bob Bobertson".to_string(), "Weebl Bull".to_string()]),
-                               Ok(()),
-                               vec![
-                                   ("Number of employees found: 2", Level::Info),
-                                   ("Bob Bobertson, Weebl Bull", Level::Info)
-                               ]
+        run_test_call_executor(
+            Some(vec!["Bob Bobertson".to_string(), "Weebl Bull".to_string()]),
+            Ok("Successfully found 2 employees in department \"Pie QC\"".to_string()),
+            Some(("Bob Bobertson, Weebl Bull", Level::Info))
         );
     }
 
     #[test]
     fn test_executor_calls_store_handles_non_existent_department() {
-        run_test_call_executor(None,
-                               Err("Department does not exist"),
-                               vec![("Department \"Pie Quality Control\" does not exist", Level::Warn)]
+        run_test_call_executor(
+            None,
+            Err("Department \"Pie QC\" does not exist".to_string()),
+            None
         );
     }
 }

@@ -15,7 +15,7 @@ use super::HandleCommand;
 
 
 pub type ParsedArgMap = HashMap<String, String>;
-pub type CommandExecutor<E> = fn(ParsedArgMap, &mut E) -> Result<(), &'static str>;
+pub type CommandExecutor<E> = fn(ParsedArgMap, &mut E) -> Result<String, String>;
 
 pub fn get_all_handlers<E: EmployeeStore>() -> Vec<CommandHandler<E>> {
     vec![
@@ -27,8 +27,6 @@ pub fn get_all_handlers<E: EmployeeStore>() -> Vec<CommandHandler<E>> {
         retrieve_employees_by_department::get_handler(),
     ]
 }
-
-static NON_PARSEABLE_ERROR: Result<(), &str> = Err("Could not parse expected args from command by matching expected pattern");
 
 pub struct CommandHandler<E: EmployeeStore> {
     match_pattern_description: &'static str,
@@ -83,12 +81,12 @@ impl<E: 'static + EmployeeStore> HandleCommand<E> for CommandHandler<E> {
         result
     }
 
-    fn execute_command(&self, command_text: &str, employee_store: &mut E) -> Result<(), &'static str> {
+    fn execute_command(&self, command_text: &str, employee_store: &mut E) -> Result<String, String> {
         match extract_args(&self.matcher_regex, &self.expected_args, command_text) {
             Some(arg_map) =>
                 (self.executor)(arg_map.clone(), employee_store),
             None =>
-                NON_PARSEABLE_ERROR
+                Err(format!("Could not parse args using pattern \"{}\"", self.match_pattern_description))
         }
     }
 
@@ -104,16 +102,16 @@ mod tests {
 
     use crate::employee_store::EmployeeStoreImpl;
 
-    use super::{CommandExecutor, CommandHandler, NON_PARSEABLE_ERROR, ParsedArgMap};
+    use super::{CommandExecutor, CommandHandler, ParsedArgMap};
     use super::super::HandleCommand;
 
-    static MATCHING_COMMAND: &str = "Do something with value 1 and value 2";
+    static MATCHING_COMMAND: &str = "Use value 1 and value 2";
     static NON_MATCHING_COMMAND: &str = "Handle value 1, also value 2";
-    static STUB_EXECUTOR_RETURN: Result<(), &str> = Err("Some error occurred according to stub executor");
+    fn get_stub_executor_return() -> Result<String, String> { Ok("All went well".to_string()) }
     static STUB_EXECUTOR: CommandExecutor<EmployeeStoreImpl> = |arg_map: ParsedArgMap, store: &mut EmployeeStoreImpl| {
         assert_eq!(arg_map, get_test_arg_map());
         assert_eq!(*store, EmployeeStoreImpl::new());
-        STUB_EXECUTOR_RETURN
+        get_stub_executor_return()
     };
 
     fn get_test_arg_map() -> ParsedArgMap {
@@ -125,8 +123,8 @@ mod tests {
 
     fn get_test_handler() -> CommandHandler<EmployeeStoreImpl> {
         CommandHandler {
-            match_pattern_description: "Do something with (argument 1) and (argument 2)",
-            matcher_regex: Regex::new(r"^Do something with (?P<arg_1>.*) and (?P<arg_2>.*)$").unwrap(),
+            match_pattern_description: "Use (argument 1) and (argument 2)",
+            matcher_regex: Regex::new(r"^Use (?P<arg_1>.*) and (?P<arg_2>.*)$").unwrap(),
             expected_args: vec!["arg_1".to_string(), "arg_2".to_string()],
             executor: STUB_EXECUTOR,
         }
@@ -149,7 +147,7 @@ mod tests {
     fn test_matches_command_text_true() {
         run_test_against_matcher(
             MATCHING_COMMAND, true,
-            "Command text successfully matched pattern \"Do something with (argument 1) and (argument 2)\"",
+            "Command text successfully matched pattern \"Use (argument 1) and (argument 2)\"",
         );
     }
 
@@ -157,11 +155,11 @@ mod tests {
     fn test_matches_command_text_false() {
         run_test_against_matcher(
             NON_MATCHING_COMMAND, false,
-            "Command text did not match pattern \"Do something with (argument 1) and (argument 2)\"",
+            "Command text did not match pattern \"Use (argument 1) and (argument 2)\"",
         );
     }
 
-    fn run_test_against_executor(command_text: &str, expected_return: Result<(), &str>) {
+    fn run_test_against_executor(command_text: &str, expected_return: Result<String, String>) {
         assert_eq!(
             get_test_handler().execute_command(command_text, &mut EmployeeStoreImpl::new()),
             expected_return
@@ -170,12 +168,15 @@ mod tests {
 
     #[test]
     fn test_calls_executor_matching_command() {
-        run_test_against_executor(MATCHING_COMMAND, STUB_EXECUTOR_RETURN);
+        run_test_against_executor(MATCHING_COMMAND, get_stub_executor_return());
     }
 
     #[test]
     fn test_calls_executor_non_matching_command() {
-        run_test_against_executor(NON_MATCHING_COMMAND, NON_PARSEABLE_ERROR);
+        run_test_against_executor(
+            NON_MATCHING_COMMAND,
+            Err("Could not parse args using pattern \"Use (argument 1) and (argument 2)\"".to_string())
+        );
     }
 
     #[test]

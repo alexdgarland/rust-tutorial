@@ -8,8 +8,11 @@ const REGEX_PATTERN: &'static str = r"^List departments$";
 pub fn get_handler<E: EmployeeStore>() -> CommandHandler<E> {
     let executor: CommandExecutor<E> = |_arg_map: ParsedArgMap, store: &mut E| {
         info!("Retrieving department list");
-        info!("{}", store.list_departments().join(", "));
-        Ok(())
+        // TODO - if this were connecting to an actual database it would be able to error -
+        //  do we want to allow for that case?
+        let dept_list = store.list_departments();
+        info!("{}", dept_list.join(", "));
+        Ok(format!("Successfully retrieved full list of {} departments", dept_list.len()))
     };
 
     CommandHandler::new(
@@ -64,7 +67,7 @@ mod tests {
         let result = get_handler()
             .execute_command(MATCHING_COMMAND, &mut mock_store);
 
-        assert_eq!(result, Ok(()));
+        assert_eq!(result, Ok("Successfully retrieved full list of 2 departments".to_string()));
 
         testing_logger::validate(|captured_logs| {
             assert_eq!(captured_logs.len(), 2);

@@ -16,13 +16,15 @@ pub fn get_handler<E: EmployeeStore>() -> CommandHandler<E> {
             // This check could in some cases be handled as (e.g.) a unique constraint on underlying data store,
             // but let's assume we want to do this as a business logic concern in this layer independent of storage impl
             Some(true) => {
-                error!("Employee \"{}\" already exists in department \"{}\" and cannot be added", employee_name, department);
-                Err("Employee already exists in department")
+                Err(format!(
+                    "Employee \"{}\" already exists in department \"{}\" and cannot be added", employee_name, department)
+                )
             },
             _ => {
+                // TODO - if this were connecting to an actual database it would be able to error -
+                //  do we want to allow for that case?
                 store.add_employee(employee_name, department);
-                info!("Successfully added employee \"{}\" to department \"{}\"", employee_name, department);
-                Ok(())
+                Ok(format!("Successfully added employee \"{}\" to department \"{}\"", employee_name, department))
             }
         }
     };
@@ -43,10 +45,9 @@ mod tests {
     use crate::command::handler::CommandHandler;
     use mockall::predicate::eq;
     use crate::employee_store::MockEmployeeStore;
-    use log::Level;
 
-    const MATCHING_COMMAND: &str = "Add Bob Bobertson to Pie Quality Control";
-    const NON_MATCHING_COMMAND: &'static str = "Add Bob Bobertson into the Pie Eating department";
+    const MATCHING_COMMAND: &str = "Add Bob to Pie QC";
+    const NON_MATCHING_COMMAND: &'static str = "Add Bob into the Pie Eating department";
 
     fn run_test_against_matcher(command_text: &str, expected_return: bool) {
         let test_handler: CommandHandler<MockEmployeeStore> = get_handler();
@@ -65,45 +66,37 @@ mod tests {
 
     #[test]
     fn test_executor_calls_expected_method_on_store() {
-        testing_logger::setup();
-
         let mut mock_store = MockEmployeeStore::new();
         mock_store
             .expect_retrieve_employees_by_department()
             .times(1)
-            .with(eq(String::from("Pie Quality Control")))
+            .with(eq(String::from("Pie QC")))
             .return_const(None);
         mock_store
             .expect_add_employee()
             .times(1)
             .with(
-                eq("Bob Bobertson".to_string()),
-                eq("Pie Quality Control".to_string()),
+                eq("Bob".to_string()),
+                eq("Pie QC".to_string()),
             ).return_const(());
 
         let result = get_handler()
             .execute_command(MATCHING_COMMAND, &mut mock_store);
 
-        assert_eq!(result, Ok(()));
-
-        testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), 1);
-            assert_eq!(captured_logs[0].body,
-                       "Successfully added employee \"Bob Bobertson\" to department \"Pie Quality Control\"");
-            assert_eq!(captured_logs[0].level, Level::Info);
-        })
+        assert_eq!(
+            result,
+            Ok("Successfully added employee \"Bob\" to department \"Pie QC\"".to_string())
+        );
     }
 
     #[test]
     fn test_executor_errors_without_adding_if_existing_employee_added_to_same_department() {
-        testing_logger::setup();
-
         let mut mock_store = MockEmployeeStore::new();
         mock_store
             .expect_retrieve_employees_by_department()
             .times(1)
-            .with(eq("Pie Quality Control".to_string()))
-            .return_const(Some(vec!["Bob Bobertson".to_string()]));
+            .with(eq("Pie QC".to_string()))
+            .return_const(Some(vec!["Bob".to_string()]));
         mock_store
             .expect_add_employee()
             .times(0);
@@ -111,15 +104,9 @@ mod tests {
         let result = get_handler()
             .execute_command(MATCHING_COMMAND, &mut mock_store);
 
-        assert_eq!(result, Err("Employee already exists in department"));
-
-        testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), 1);
-            assert_eq!(
-                captured_logs[0].body,
-                "Employee \"Bob Bobertson\" already exists in department \"Pie Quality Control\" and cannot be added"
-            );
-            assert_eq!(captured_logs[0].level, Level::Error);
-        })
+        assert_eq!(
+            result,
+            Err("Employee \"Bob\" already exists in department \"Pie QC\" and cannot be added".to_string())
+        );
     }
 }

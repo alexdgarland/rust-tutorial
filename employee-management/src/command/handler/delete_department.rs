@@ -9,18 +9,13 @@ pub fn get_handler<E: EmployeeStore>() -> CommandHandler<E> {
     let executor: CommandExecutor<E> = |arg_map: ParsedArgMap, store: &mut E| {
         let department = arg_map.get("department").unwrap();
         info!("Deleting department \"{}\"", department);
-
-        match store.delete_department(department) {
-            Ok(dept_info) => {
-                info!("Department deleted successfully - \"{}\" (employees {})",
-                      department, dept_info.employee_names.join(", "));
-                Ok(())
-            },
-            Err(error_message) => {
-                error!("Deletion failed with error: {}", error_message);
-                Err("Failed to delete department")
-            }
-        }
+        store.delete_department(department).map(
+            |dept_info|
+                format!(
+                    "Department deleted successfully - \"{}\" (employees {})",
+                    department, dept_info.employee_names.join(", ")
+                )
+        )
     };
 
     CommandHandler {
@@ -39,7 +34,6 @@ mod tests {
     use crate::command::handler::CommandHandler;
     use super::get_handler;
     use mockall::predicate::eq;
-    use log::Level;
 
     const MATCHING_COMMAND: &'static str = "Delete department Pie Eating";
     const NON_MATCHING_COMMAND: &'static str = "We are closing the Pie Eating department";
@@ -60,11 +54,8 @@ mod tests {
     }
 
     fn run_test_call_executor(
-        mock_return_value: Result<DepartmentInfo, String>, expected_handler_result: Result<(), &str>,
-        additional_log_body: &str, additional_log_level: Level
+        mock_return_value: Result<DepartmentInfo, String>, expected_handler_result: Result<String, String>
     ) {
-        testing_logger::setup();
-
         let mut mock_store = MockEmployeeStore::new();
         mock_store
             .expect_delete_department()
@@ -76,15 +67,6 @@ mod tests {
             .execute_command(MATCHING_COMMAND, &mut mock_store);
 
         assert_eq!(result, expected_handler_result);
-
-        testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), 2);
-            assert_eq!(captured_logs[0].body, "Deleting department \"Pie Eating\"");
-            assert_eq!(captured_logs[0].level, Level::Info);
-            assert_eq!(captured_logs[1].body, additional_log_body);
-            assert_eq!(captured_logs[1].level, additional_log_level);
-        })
-
     }
 
     #[test]
@@ -95,22 +77,17 @@ mod tests {
                 employee_names: vec!["Bob".to_string(), "Weebl".to_string()]
             }
         );
-
         run_test_call_executor(
             mock_return_value,
-            Ok(()),
-            "Department deleted successfully - \"Pie Eating\" (employees Bob, Weebl)",
-            Level::Info
+            Ok("Department deleted successfully - \"Pie Eating\" (employees Bob, Weebl)".to_string())
         );
     }
 
     #[test]
     fn test_handles_failure_to_delete_non_existent_department() {
         run_test_call_executor(
-            Err("Could not delete department \"Pie Eating\" - no such department".to_string()),
-            Err("Failed to delete department"),
-            "Deletion failed with error: Could not delete department \"Pie Eating\" - no such department",
-            Level::Error
+            Err("Something bad happened".to_string()),
+            Err("Something bad happened".to_string())
         );
     }
 

@@ -17,16 +17,13 @@ pub fn get_handler<E: EmployeeStore>() -> CommandHandler<E> {
 
         match store.delete_employee(employee_name, department) {
             NoSuchDepartment => {
-                info!("Department \"{}\" does not exist", department);
-                Err("No such department")
+                Err(format!("Department \"{}\" does not exist", department))
             }
             EmployeeNotInDepartment => {
-                info!("Employee \"{}\" does not exist in department \"{}\"", employee_name, department);
-                Err("Employee not in department")
+                Err(format!("Employee \"{}\" does not exist in department \"{}\"", employee_name, department))
             }
             SuccessfullyDeleted => {
-                info!("Successfully deleted employee \"{}\" from department \"{}\"", employee_name, department);
-                Ok(())
+                Ok(format!("Successfully deleted employee \"{}\" from department \"{}\"", employee_name, department))
             }
         }
     };
@@ -50,10 +47,9 @@ mod tests {
     use crate::employee_store::EmployeeDeletionResult::{
         SuccessfullyDeleted, NoSuchDepartment, EmployeeNotInDepartment,
     };
-    use log::Level;
 
-    const MATCHING_COMMAND: &str = "Delete Bob Bobertson from Pie Quality Control";
-    const NON_MATCHING_COMMAND: &'static str = "Bob Bobertson shouldn't be in the Pie Eating department";
+    const MATCHING_COMMAND: &str = "Delete Bob from Pie QC";
+    const NON_MATCHING_COMMAND: &'static str = "Bob shouldn't be in the Pie Eating department";
 
     fn run_test_against_matcher(command_text: &str, expected_return: bool) {
         let test_handler: CommandHandler<MockEmployeeStore> = get_handler();
@@ -71,52 +67,44 @@ mod tests {
     }
 
     fn run_executor_call_test(
-        mock_store_return_value: EmployeeDeletionResult, expected_result: Result<(), &str>, expected_log_entry: &str
+        mock_store_return_value: EmployeeDeletionResult, expected_result: Result<String, String>
     ) {
-        testing_logger::setup();
-
         let mut mock_store = MockEmployeeStore::new();
         mock_store
             .expect_delete_employee()
             .times(1)
             .with(
-                eq(String::from("Bob Bobertson")),
-                eq(String::from("Pie Quality Control")),
+                eq(String::from("Bob")),
+                eq(String::from("Pie QC")),
             ).return_once(move |_emp, _dept| mock_store_return_value);
 
         let result = get_handler()
             .execute_command(MATCHING_COMMAND, &mut mock_store);
 
         assert_eq!(result, expected_result);
-
-        testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), 1);
-            assert_eq!(captured_logs[0].level, Level::Info);
-            assert_eq!(captured_logs[0].body, expected_log_entry);
-        });
     }
 
     #[test]
     fn test_executor_call_handles_successful_deletion() {
         run_executor_call_test(
-            SuccessfullyDeleted, Ok(()),
-            "Successfully deleted employee \"Bob Bobertson\" from department \"Pie Quality Control\"",
+            SuccessfullyDeleted,
+            Ok("Successfully deleted employee \"Bob\" from department \"Pie QC\"".to_string()),
         );
     }
 
     #[test]
     fn test_executor_calls_expected_method_on_store_handles_no_such_department() {
         run_executor_call_test(
-            NoSuchDepartment, Err("No such department"),
-            "Department \"Pie Quality Control\" does not exist",
+            NoSuchDepartment,
+            Err("Department \"Pie QC\" does not exist".to_string())
         );
     }
 
     #[test]
     fn test_executor_calls_expected_method_on_store_handles_employee_not_in_department() {
         run_executor_call_test(
-            EmployeeNotInDepartment, Err("Employee not in department"),
-            "Employee \"Bob Bobertson\" does not exist in department \"Pie Quality Control\"",
+            EmployeeNotInDepartment,
+            Err("Employee \"Bob\" does not exist in department \"Pie QC\"".to_string())
         );
     }
 }

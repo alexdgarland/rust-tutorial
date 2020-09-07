@@ -1,5 +1,4 @@
 use crate::employee_store::EmployeeStore;
-use CommandProcessingResult::{Success, NoMatchingHandlerFound, HandlerExecutionFailed};
 use super::HandleCommand;
 
 pub struct CommandDispatcher<E: 'static + EmployeeStore, H: HandleCommand<E>> {
@@ -13,35 +12,19 @@ pub fn create_dispatcher<E: 'static + EmployeeStore, H: HandleCommand<E>>(comman
     CommandDispatcher { command_handlers, employee_store }
 }
 
-#[derive(Debug, Eq, PartialEq)]
-pub enum CommandProcessingResult {
-    Success,
-    NoMatchingHandlerFound,
-    HandlerExecutionFailed(String)
-}
-
 impl<E: 'static + EmployeeStore, H: HandleCommand<E>> CommandDispatcher<E, H> {
 
-    pub fn process_command(&mut self, command_text: &str) -> CommandProcessingResult {
+    pub fn process_command(&mut self, command_text: &str) -> Result<String, String> {
 
         debug!("Checking for command matching text \"{}\"", command_text);
 
         for handler in &self.command_handlers {
             if handler.matches_command_text(command_text) {
-                return match handler.execute_command(command_text, &mut self.employee_store) {
-                    Ok(()) =>
-                        Success,
-                    Err(error_message) => {
-                        debug!("Command execution failed with error \"{}\"", error_message);
-                        HandlerExecutionFailed(error_message.to_string())
-                    }
-                }
+                return handler.execute_command(command_text, &mut self.employee_store)
             }
         }
 
-        debug!("No matching handler found");
-        NoMatchingHandlerFound
-
+        Err(format!("No matching handler found for command \"{}\"", command_text))
     }
 
     pub fn get_usage_text(&self) -> String {
@@ -57,8 +40,7 @@ impl<E: 'static + EmployeeStore, H: HandleCommand<E>> CommandDispatcher<E, H> {
 
 #[cfg(test)]
 mod tests {
-    use super::{CommandDispatcher, CommandProcessingResult};
-    use super::CommandProcessingResult::{Success, NoMatchingHandlerFound, HandlerExecutionFailed};
+    use super::CommandDispatcher;
     use crate::employee_store::{MockEmployeeStore, EmployeeStoreImpl};
     use log::Level::Debug;
     use mockall::predicate::eq;
@@ -70,7 +52,7 @@ mod tests {
 
     impl MockHandler {
 
-        fn with_match_is_called_expectation(mut self, return_value: bool) -> MockHandler {
+        fn with_match_called_expectation(mut self, return_value: bool) -> MockHandler {
             self
                 .expect_matches_command_text()
                 .times(1)
@@ -79,12 +61,7 @@ mod tests {
             self
         }
 
-        fn with_match_not_called_expectation(mut self) -> MockHandler {
-            self.expect_matches_command_text().times(0);
-            self
-        }
-
-        fn with_execute_is_called_expectation(mut self, return_value: Result<(), &'static str>) -> MockHandler {
+        fn with_execute_called_expectation(mut self, return_value: Result<String, String>) -> MockHandler {
             self
                 .expect_execute_command()
                 .times(1)
@@ -93,76 +70,37 @@ mod tests {
             self
         }
 
-        fn with_execute_not_called_expectation(mut self) -> MockHandler {
-            self.expect_execute_command().times(0);
-            self
-        }
-
     }
 
-    fn handler_match_expect_executor_called() -> MockHandleCommand<EmployeeStoreImpl> {
+    fn get_success_result() -> Result<String, String> {
+        Ok("Executor succeeded".to_string())
+    }
+
+    fn handler_match_expect_executor_called() -> MockHandler {
         MockHandleCommand::new()
-            .with_match_is_called_expectation(true)
-            .with_execute_is_called_expectation(Ok(()))
+            .with_match_called_expectation(true)
+            .with_execute_called_expectation(get_success_result())
     }
 
-    fn handler_match_expect_not_called() -> MockHandleCommand<EmployeeStoreImpl> {
-        MockHandleCommand::new()
-            .with_match_not_called_expectation()
-            .with_execute_not_called_expectation()
+    fn handler_non_match() -> MockHandler {
+        MockHandleCommand::new().with_match_called_expectation(false)
     }
 
-    fn handler_non_match() -> MockHandleCommand<EmployeeStoreImpl> {
-        MockHandleCommand::new()
-            .with_match_is_called_expectation(false)
-            .with_execute_not_called_expectation()
-    }
-
-    fn handler_match_executor_will_error() -> MockHandleCommand<EmployeeStoreImpl> {
-        MockHandleCommand::new()
-            .with_match_is_called_expectation(true)
-            .with_execute_is_called_expectation(Err("Error from the executor"))
-    }
-
-    static EXPECTED_FIRST_LOG_LINE: &str = "Checking for command matching text \"Some command\"";
-
-    fn run_test(
-        command_handlers: Vec<MockHandleCommand<EmployeeStoreImpl>>,
-        expected_result: CommandProcessingResult,
-        expected_log_lines: Vec<&str>,
-    ) {
+    fn run_test(command_handlers: Vec<MockHandler>, expected_result: Result<String, String>) {
         testing_logger::setup();
         let mut dispatcher = CommandDispatcher { command_handlers, employee_store: EmployeeStoreImpl::new(), };
-
         assert_eq!(dispatcher.process_command(COMMAND), expected_result);
-
         testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), expected_log_lines.len(), "Did not get expected number of log entries");
-            for (captured, expected_body) in captured_logs
-                .iter()
-                .zip(expected_log_lines.iter())
-            {
-                assert_eq!(captured.level, Debug);
-                assert_eq!(&captured.body, expected_body);
-            }
+            assert_eq!(captured_logs.len(), 1);
+            assert_eq!(captured_logs[0].body, "Checking for command matching text \"Some command\"");
+            assert_eq!(captured_logs[0].level, Debug);
         });
     }
 
     #[test]
     fn test_calls_one_handler_which_matches_command() {
         let command_handlers = vec![handler_match_expect_executor_called()];
-        let expected_log_lines = vec![EXPECTED_FIRST_LOG_LINE];
-        run_test(command_handlers, Success, expected_log_lines);
-    }
-
-    #[test]
-    fn test_bypasses_non_matching_handler() {
-        let command_handlers = vec![
-            handler_non_match(),
-            handler_match_expect_executor_called(),
-        ];
-        let expected_log_lines = vec![EXPECTED_FIRST_LOG_LINE];
-        run_test(command_handlers, Success, expected_log_lines);
+        run_test(command_handlers, get_success_result());
     }
 
     #[test]
@@ -170,43 +108,38 @@ mod tests {
         let command_handlers = vec![
             handler_non_match(),
             handler_match_expect_executor_called(),
-            handler_match_expect_not_called(),
+            MockHandler::new(),     // Does not expect to be called
         ];
-        let expected_log_lines = vec![EXPECTED_FIRST_LOG_LINE];
-        run_test(command_handlers, Success, expected_log_lines);
+        run_test(command_handlers, get_success_result());
     }
 
     #[test]
     fn test_returns_expected_result_for_no_matching_handlers() {
         let command_handlers = vec![handler_non_match()];
-        let expected_log_lines = vec![EXPECTED_FIRST_LOG_LINE, "No matching handler found"];
-        run_test(command_handlers, NoMatchingHandlerFound, expected_log_lines);
+        run_test(command_handlers, Err("No matching handler found for command \"Some command\"".to_string()));
     }
 
     #[test]
     fn test_returns_expected_result_for_failing_command_execution() {
-        let command_handlers = vec![handler_match_executor_will_error()];
-        let expected_log_lines = vec![
-            EXPECTED_FIRST_LOG_LINE,
-            "Command execution failed with error \"Error from the executor\""
+        let command_handlers = vec![
+            MockHandleCommand::new()
+                .with_match_called_expectation(true)
+                .with_execute_called_expectation(Err("Error from the executor".to_string()))
         ];
-        let expected_result = HandlerExecutionFailed("Error from the executor".to_string());
-        run_test(command_handlers, expected_result, expected_log_lines);
+        run_test(command_handlers, Err("Error from the executor".to_string()));
     }
 
     #[test]
     fn test_get_usage_text() {
-        let mock_handlers: Vec<MockHandleCommand<MockEmployeeStore>> = vec!["Description 1", "Description 2"]
-            .iter()
-            .map(|description| {
-                let mut handler = MockHandleCommand::new();
-                handler.expect_describe().return_const(description.to_string());
-                handler
-            })
-            .collect();
+
+        fn mock_handler(description: &str) -> MockHandleCommand<MockEmployeeStore> {
+            let mut handler = MockHandleCommand::new();
+            handler.expect_describe().return_const(description.to_string());
+            handler
+        }
 
         let dispatcher = CommandDispatcher {
-            command_handlers: mock_handlers,
+            command_handlers: vec![mock_handler("Description 1"), mock_handler("Description 2")],
             employee_store: MockEmployeeStore::new()
         };
 
