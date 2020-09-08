@@ -1,29 +1,27 @@
 use std::thread;
 use std::time::Duration;
 
-fn simulated_expensive_calculation(intensity: u32) -> u32 {
-    println!("calculating slowly...");
-    thread::sleep(Duration::from_secs(2));
-    intensity
-}
+mod cacher;
 
 fn generate_workout(intensity: u32, random_number: u32) {
+    let mut expensive_result = cacher::Cacher::new(|num| {
+        println!("Calculating slowly...");
+        thread::sleep(Duration::from_secs(2));
+        num
+    });
+
     if intensity < 25 {
-        println!(
-            "Today, do {} pushups!",
-            simulated_expensive_calculation(intensity)
-        );
-        println!(
-            "Next, do {} situps!",
-            simulated_expensive_calculation(intensity)
-        );
+        println!("Today, do {} pushups!", expensive_result.value(intensity));
+        println!("Next, do {} situps!", expensive_result.value(intensity));
+        // This should use a higher intensity value but only if the cacher is working properly
+        println!("Push it harder - do {} pushups!", expensive_result.value(intensity * 2));
     } else {
         if random_number == 3 {
             println!("Take a break today! Remember to stay hydrated!");
         } else {
             println!(
                 "Today, run for {} minutes!",
-                simulated_expensive_calculation(intensity)
+                expensive_result.value(intensity)
             );
         }
     }
