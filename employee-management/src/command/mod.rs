@@ -2,7 +2,7 @@ use std::result::Result;
 
 use mockall_derive::automock;
 
-use dispatcher::CommandDispatcher;
+pub use dispatcher::CommandDispatcher;
 use handler::CommandHandler;
 use crate::employee_store::{EmployeeStore, EmployeeStoreImpl};
 
