@@ -1,6 +1,7 @@
 
 pub(crate) fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    // A more declarative version than provided in the tutorial
+    // A more declarative version than initially provided in the tutorial -
+    // later asked to implement basically exactly this in 13.3
     contents
         .lines()
         .filter(|l| l.contains(query))
