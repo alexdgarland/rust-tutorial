@@ -11,17 +11,23 @@ pub enum List {
     Nil,
 }
 
-// TODO - we actually want the to_string (Display) behaviour to work like:
-//      - cons(1, cons(2, Nil)) -> "1, 2"
-//      - Nil -> ""
 impl Display for List {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        if let Cons(value, list) = self {
-            write!(f, "{}, {}", value, list.to_string())
-        }
-        else {
-            write!(f, "NIL")
-        }
+        let string = match self {
+            Nil =>
+                "".to_string(),
+            Cons(value, boxed_list) =>
+                {
+                    let next = match &**boxed_list {
+                        Nil =>
+                            "".to_string(),
+                        cons_list =>
+                            format!(", {}", cons_list)
+                    };
+                    value.to_string() + &next
+                }
+        };
+        write!(f, "{}", string)
     }
 }
 
@@ -31,18 +37,16 @@ pub fn cons(value: i32, list: List) -> List {
 
 #[cfg(test)]
 mod tests {
-
     use super::{cons, Nil};
 
     #[test]
     fn string_for_populated_list() {
         let cons_list = cons(1, cons(2, cons(3, Nil)));
-        assert_eq!(cons_list.to_string(), "1, 2, 3, NIL")
+        assert_eq!(cons_list.to_string(), "1, 2, 3")
     }
 
     #[test]
     fn string_for_empty_list() {
-        assert_eq!(Nil.to_string(), "NIL")
+        assert_eq!(Nil.to_string(), "")
     }
-
 }
