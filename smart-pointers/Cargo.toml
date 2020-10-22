@@ -1,5 +1,5 @@
 [package]
-name = "smart_pointers"
+name = "smart-pointers"
 version = "0.1.0"
 authors = ["Alex Garland <alex.d.garland@gmail.com>"]
 edition = "2018"
