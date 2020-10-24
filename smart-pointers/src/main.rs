@@ -1,7 +1,7 @@
 
-use smart_pointers::cons_enum::{cons, Nil};
+use smart_pointers;
 
 fn main() {
-    let list = cons(1, cons(2, cons(3, Nil)));
-    print!("{}\n", list)
+    smart_pointers::demo_enum();
+    smart_pointers::demo_struct();
 }

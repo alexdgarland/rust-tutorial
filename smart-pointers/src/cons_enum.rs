@@ -2,10 +2,10 @@ use std::fmt::{Display, Formatter, Result};
 use List::Cons;
 pub use List::Nil;
 
-// TODO - could also do an impl using a struct with an Option-al reference to another member,
-//  rather than defining a separate value for Nil.
-//  Could then make direct member access fully private and enforce using the cons function
+// TODO - could make generic
+// TODO - could add standard functional things like map, reduce, filter etc - maybe also an iterative foreach?
 
+/// The implementation as defined in the exercise, using an enum
 pub enum List {
     Cons(i32, Box<List>),
     Nil,
@@ -31,8 +31,15 @@ impl Display for List {
     }
 }
 
+/// Function to make cons'ing slicker (take care of the required boxing)
 pub fn cons(value: i32, list: List) -> List {
     Cons(value, Box::new(list))
+}
+
+pub fn demo_enum() {
+    println!("***** Demoing enum implementation *****");
+    let list = cons(1, cons(2, cons(3, Nil)));
+    println!("{}", list)
 }
 
 #[cfg(test)]
