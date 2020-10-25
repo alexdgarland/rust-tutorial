@@ -30,6 +30,17 @@ impl<T: Display> Display for List<T> {
     }
 }
 
+impl<T> List<T> {
+    fn map<R>(&self, f: fn(&T) -> R) -> List<R> {
+        match &self {
+            Nil => Nil,
+            Cons(value, next) => {
+                cons(f(value), next.map(f))
+            }
+        }
+    }
+}
+
 /// Function to make cons'ing slicker (take care of the required boxing)
 pub fn cons<T>(value: T, list: List<T>) -> List<T> {
     Cons(value, Box::new(list))
@@ -71,6 +82,18 @@ mod tests {
                  cons(WrappedInt { i: 2 },
                       cons(WrappedInt { i: 3 }, Nil)));
         assert_eq!(cons_list.to_string(), "1, 2, 3");
+    }
+
+    #[test]
+    fn map_for_empty_list() {
+        let nil: List<i32>= Nil;
+        assert_eq!(nil.map(|i:&i32| i + 1).to_string(), "");
+    }
+
+    #[test]
+    fn map_for_populated_list_i32() {
+        let cons_list = cons(1, cons(2, cons(3, Nil)));
+        assert_eq!(cons_list.map(|i:&i32| i + 1).to_string(), "2, 3, 4");
     }
 
 }
