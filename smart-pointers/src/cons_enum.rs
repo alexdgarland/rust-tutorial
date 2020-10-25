@@ -2,16 +2,15 @@ use std::fmt::{Display, Formatter, Result};
 use List::Cons;
 pub use List::Nil;
 
-// TODO - could make generic
 // TODO - could add standard functional things like map, reduce, filter etc - maybe also an iterative foreach?
 
 /// The implementation as defined in the exercise, using an enum
-pub enum List {
-    Cons(i32, Box<List>),
+pub enum List<T> {
+    Cons(T, Box<List<T>>),
     Nil,
 }
 
-impl Display for List {
+impl<T: Display> Display for List<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let string = match self {
             Nil =>
@@ -32,7 +31,7 @@ impl Display for List {
 }
 
 /// Function to make cons'ing slicker (take care of the required boxing)
-pub fn cons(value: i32, list: List) -> List {
+pub fn cons<T>(value: T, list: List<T>) -> List<T> {
     Cons(value, Box::new(list))
 }
 
@@ -44,16 +43,34 @@ pub fn demo_enum() {
 
 #[cfg(test)]
 mod tests {
-    use super::{cons, Nil};
-
-    #[test]
-    fn string_for_populated_list() {
-        let cons_list = cons(1, cons(2, cons(3, Nil)));
-        assert_eq!(cons_list.to_string(), "1, 2, 3")
-    }
+    use super::{List, cons, Nil};
+    use crate::test_helpers::WrappedInt;
 
     #[test]
     fn string_for_empty_list() {
-        assert_eq!(Nil.to_string(), "")
+        let nil: List<i32>= Nil;
+        assert_eq!(nil.to_string(), "")
     }
+
+    #[test]
+    fn string_for_populated_list_i32() {
+        let cons_list = cons(1, cons(2, cons(3, Nil)));
+        assert_eq!(cons_list.to_string(), "1, 2, 3");
+    }
+
+    #[test]
+    fn string_for_populated_list_str() {
+        let cons_list = cons("one", cons("two", cons("three", Nil)));
+        assert_eq!(cons_list.to_string(), "one, two, three");
+    }
+
+    #[test]
+    fn string_for_populated_list_struct_with_display() {
+        let cons_list =
+            cons(WrappedInt { i: 1 },
+                 cons(WrappedInt { i: 2 },
+                      cons(WrappedInt { i: 3 }, Nil)));
+        assert_eq!(cons_list.to_string(), "1, 2, 3");
+    }
+
 }
