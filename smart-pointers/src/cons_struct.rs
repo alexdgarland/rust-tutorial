@@ -7,6 +7,7 @@ use std::fmt::{Display, Formatter, Result};
 /// There are pros and cons to this approach - it allows usage of standard Option behaviour,
 /// but does not allow us to customise behaviour of empty lists as they are just represented by None
 /// and all operations on populated lists returned by cons have to work round the fact that it is wrapped in a Some.
+/// Overall, this is somewhat more like a safer version of a standard Singly-Linked List.
 pub struct List<T> {
     value: T,
     next: Option<Box<List<T>>>
