@@ -31,6 +31,23 @@ impl<T: Display> Display for List<T> {
 }
 
 impl<T> List<T> {
+
+    fn to_vector(&self) -> Vec<&T> {
+        // TODO this could probably be optimised a bit
+        //  - for example if we keep track of length of list and allocate a single vector?
+        //  Either way, could be good have a length() or size() method
+        //  (and could do lazy evaluation for both)
+        match &self {
+            Nil =>
+                vec![],
+            Cons(value, next) => {
+                let mut vector = vec![value.clone()];
+                vector.append(&mut next.to_vector());
+                vector
+            }
+        }
+    }
+
     fn map<R>(&self, f: fn(&T) -> R) -> List<R> {
         match &self {
             Nil => Nil,
@@ -39,6 +56,7 @@ impl<T> List<T> {
             }
         }
     }
+
 }
 
 /// Function to make cons'ing slicker (take care of the required boxing)
@@ -85,6 +103,19 @@ mod tests {
     }
 
     #[test]
+    fn to_vector_for_empty_list() {
+        let nil: List<i32>= Nil;
+        let expected: Vec<&i32> = vec![];
+        assert_eq!(nil.to_vector(), expected);
+    }
+
+    #[test]
+    fn to_vector_for_populated_list_i32() {
+        let cons_list = cons(1, cons(2, cons(3, Nil)));
+        assert_eq!(cons_list.to_vector(), vec![&1, &2, &3]);
+    }
+
+    #[test]
     fn map_for_empty_list() {
         let nil: List<i32>= Nil;
         assert_eq!(nil.map(|i:&i32| i + 1).to_string(), "");
@@ -93,7 +124,7 @@ mod tests {
     #[test]
     fn map_for_populated_list_i32() {
         let cons_list = cons(1, cons(2, cons(3, Nil)));
-        assert_eq!(cons_list.map(|i:&i32| i + 1).to_string(), "2, 3, 4");
+        assert_eq!(cons_list.map(|i:&i32| i + 1).to_vector(), vec!(&2, &3, &4));
     }
 
 }
