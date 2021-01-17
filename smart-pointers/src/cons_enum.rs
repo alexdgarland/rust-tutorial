@@ -4,9 +4,9 @@ pub use List::Nil;
 
 // TODO - could add standard functional things like map, reduce, filter etc - maybe also an iterative foreach?
 
-/// The implementation as defined in the exercise, using an enum
+/// Based on the implementation as defined in the exercise, using an enum
 pub enum List<T> {
-    Cons(T, Box<List<T>>),
+    Cons(T, Box<List<T>>, i32),
     Nil,
 }
 
@@ -15,7 +15,7 @@ impl<T: Display> Display for List<T> {
         let string = match self {
             Nil =>
                 "".to_string(),
-            Cons(value, boxed_list) =>
+            Cons(value, boxed_list, _) =>
                 {
                     let next = match &**boxed_list {
                         Nil =>
@@ -32,6 +32,13 @@ impl<T: Display> Display for List<T> {
 
 impl<T> List<T> {
 
+    fn length(&self) -> i32 {
+        match &self {
+            Nil => 0,
+            Cons(_, _, size) => *size
+        }
+    }
+
     fn to_vector(&self) -> Vec<&T> {
         // TODO this could probably be optimised a bit
         //  - for example if we keep track of length of list and allocate a single vector?
@@ -40,7 +47,7 @@ impl<T> List<T> {
         match &self {
             Nil =>
                 vec![],
-            Cons(value, next) => {
+            Cons(value, next, _) => {
                 let mut vector = vec![value.clone()];
                 vector.append(&mut next.to_vector());
                 vector
@@ -51,7 +58,7 @@ impl<T> List<T> {
     fn map<R>(&self, f: fn(&T) -> R) -> List<R> {
         match &self {
             Nil => Nil,
-            Cons(value, next) => {
+            Cons(value, next, _) => {
                 cons(f(value), next.map(f))
             }
         }
@@ -61,7 +68,8 @@ impl<T> List<T> {
 
 /// Function to make cons'ing slicker (take care of the required boxing)
 pub fn cons<T>(value: T, list: List<T>) -> List<T> {
-    Cons(value, Box::new(list))
+    let newLength = list.length() + 1;
+    Cons(value, Box::new(list), newLength)
 }
 
 pub fn demo_enum() {
@@ -74,6 +82,18 @@ pub fn demo_enum() {
 mod tests {
     use super::{List, cons, Nil};
     use crate::test_helpers::WrappedInt;
+
+    #[test]
+    fn length_for_empty_list() {
+        let nil: List<i32>= Nil;
+        assert_eq!(nil.length(), 0)
+    }
+
+    #[test]
+    fn length_for_populated_list_i32() {
+        let cons_list = cons(1, cons(2, cons(3, Nil)));
+        assert_eq!(cons_list.length(), 3);
+    }
 
     #[test]
     fn string_for_empty_list() {
