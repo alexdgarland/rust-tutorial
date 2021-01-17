@@ -6,7 +6,7 @@ pub use List::Nil;
 
 /// Based on the implementation as defined in the exercise, using an enum
 pub enum List<T> {
-    Cons(T, Box<List<T>>, i32),
+    Cons(T, Box<List<T>>, usize),
     Nil,
 }
 
@@ -32,27 +32,27 @@ impl<T: Display> Display for List<T> {
 
 impl<T> List<T> {
 
-    fn length(&self) -> i32 {
+    fn length(&self) -> usize {
         match &self {
             Nil => 0,
             Cons(_, _, size) => *size
         }
     }
 
+    /// Convert to vector - to be efficient, this is inherently a mutating operation,
+    /// so not trying to do in a fully functional/ immutable way.
     fn to_vector(&self) -> Vec<&T> {
-        // TODO this could probably be optimised a bit
-        //  - for example if we keep track of length of list and allocate a single vector?
-        //  Either way, could be good have a length() or size() method
-        //  (and could do lazy evaluation for both)
-        match &self {
-            Nil =>
-                vec![],
-            Cons(value, next, _) => {
-                let mut vector = vec![value.clone()];
-                vector.append(&mut next.to_vector());
-                vector
+        let length = *&self.length();
+        let mut vector: Vec<&T> = Vec::with_capacity(length);
+        let mut current_list: &List<T> = &self;
+        for _ in 0..length {
+            if let Cons(value, next, _) = &current_list
+            {
+                vector.push(value.clone());
+                current_list = next;
             }
         }
+        vector
     }
 
     fn map<R>(&self, f: fn(&T) -> R) -> List<R> {
@@ -62,14 +62,15 @@ impl<T> List<T> {
                 cons(f(value), next.map(f))
             }
         }
+
     }
 
 }
 
 /// Function to make cons'ing slicker (take care of the required boxing)
 pub fn cons<T>(value: T, list: List<T>) -> List<T> {
-    let newLength = list.length() + 1;
-    Cons(value, Box::new(list), newLength)
+    let new_length = list.length() + 1;
+    Cons(value, Box::new(list), new_length)
 }
 
 pub fn demo_enum() {
