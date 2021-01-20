@@ -110,6 +110,19 @@ impl<T: Clone> List<T> {
         }
     }
 
+    fn reverse(&self) -> List<T> {
+        fn inner<T: Clone>(remaining: &List<T>, processed: List<T>) -> List<T> {
+            match remaining {
+                Nil =>
+                    processed,
+                Cons(value, next, _) => {
+                    inner(next, cons(value.clone(), processed))
+                }
+            }
+        }
+        return inner(&self, Nil)
+    }
+
 }
 
 /// Function to make cons'ing slicker (take care of the required boxing)
@@ -274,6 +287,22 @@ mod tests {
         assert_eq!(
             example_int_list().filter(is_even),
             cons(2, Nil)
+        );
+    }
+
+    #[test]
+    fn reverse_for_empty_list() {
+        assert_eq!(
+            nil_int_list().reverse(),
+            Nil
+        );
+    }
+
+    #[test]
+    fn reverse_for_populated_list_i32() {
+        assert_eq!(
+            example_int_list().reverse(),
+            cons(3, cons(2, cons(1, Nil)))
         );
     }
 
