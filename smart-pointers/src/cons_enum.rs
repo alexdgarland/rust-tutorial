@@ -67,6 +67,31 @@ impl<T> List<T> {
 
 }
 
+impl<T: Clone> List<T> {
+
+    fn reduce(&self, f: fn(&T, &T) -> T) -> Option<T> {
+        match &self {
+            Nil =>
+                None,
+            Cons(value, next, _) => {
+                let next_list: &List<T> = next;
+                match next_list {
+                    Cons(_, _, _) =>
+                        next.reduce(f).map(|result| f(value, &result)),
+                    Nil =>
+                        Some((*value).clone())
+                }
+            }
+        }
+    }
+
+    // TODO - if fold is implemented, it should be possible to use it to implement reduce
+    // fn fold<R>(&self, f: fn(&T, &R) -> R, init: R) -> R {
+    //
+    // }
+
+}
+
 /// Function to make cons'ing slicker (take care of the required boxing)
 pub fn cons<T>(value: T, list: List<T>) -> List<T> {
     let new_length = list.length() + 1;
@@ -146,6 +171,20 @@ mod tests {
     fn map_for_populated_list_i32() {
         let cons_list = cons(1, cons(2, cons(3, Nil)));
         assert_eq!(cons_list.map(|i:&i32| i + 1).to_vector(), vec!(&2, &3, &4));
+    }
+
+    #[test]
+    fn reduce_for_empty_list() {
+        let nil: List<i32>= Nil;
+        assert_eq!(nil.reduce(|i:&i32, j:&i32| i + j), None);
+    }
+
+    #[test]
+    fn reduce_for_populated_list_i32() {
+        let cons_list = cons(1, cons(2, cons(3, Nil)));
+        let result = cons_list.reduce(|i: &i32, j: &i32| i + j);
+        let expected: Option<i32> = Some(6);
+        assert_eq!(result, expected);
     }
 
 }
