@@ -69,26 +69,24 @@ impl<T> List<T> {
 
 impl<T: Clone> List<T> {
 
-    fn reduce(&self, f: fn(&T, &T) -> T) -> Option<T> {
+    fn reduce(&self, f: fn(&T, T) -> T) -> Option<T> {
         match &self {
             Nil =>
                 None,
             Cons(value, next, _) => {
-                let next_list: &List<T> = next;
-                match next_list {
-                    Cons(_, _, _) =>
-                        next.reduce(f).map(|result| f(value, &result)),
-                    Nil =>
-                        Some((*value).clone())
-                }
+                Some(next.fold(f, value.clone()))
             }
         }
     }
 
-    // TODO - if fold is implemented, it should be possible to use it to implement reduce
-    // fn fold<R>(&self, f: fn(&T, &R) -> R, init: R) -> R {
-    //
-    // }
+    fn fold<R>(&self, f: fn(&T, R) -> R, init: R) -> R {
+        match self {
+            Nil =>
+                init,
+            Cons(value, next, _) =>
+                next.fold(f, f(value, init))
+        }
+    }
 
 }
 
@@ -109,34 +107,47 @@ mod tests {
     use super::{List, cons, Nil};
     use crate::test_helpers::WrappedInt;
 
+    fn nil_int_list() -> List<i32> {
+        Nil
+    }
+
+    fn example_int_list() -> List<i32> {
+        cons(1, cons(2, cons(3, Nil)))
+    }
+
     #[test]
     fn length_for_empty_list() {
-        let nil: List<i32>= Nil;
-        assert_eq!(nil.length(), 0)
+        assert_eq!(nil_int_list().length(), 0)
     }
 
     #[test]
     fn length_for_populated_list_i32() {
-        let cons_list = cons(1, cons(2, cons(3, Nil)));
-        assert_eq!(cons_list.length(), 3);
+        assert_eq!(example_int_list().length(), 3);
     }
 
     #[test]
     fn string_for_empty_list() {
-        let nil: List<i32>= Nil;
-        assert_eq!(nil.to_string(), "")
+        assert_eq!(nil_int_list().to_string(), "")
     }
 
     #[test]
     fn string_for_populated_list_i32() {
-        let cons_list = cons(1, cons(2, cons(3, Nil)));
-        assert_eq!(cons_list.to_string(), "1, 2, 3");
+        assert_eq!(
+            example_int_list().to_string(),
+            "1, 2, 3"
+        );
     }
 
     #[test]
     fn string_for_populated_list_str() {
-        let cons_list = cons("one", cons("two", cons("three", Nil)));
-        assert_eq!(cons_list.to_string(), "one, two, three");
+        let cons_list =
+            cons("one",
+                 cons("two",
+                      cons("three", Nil)));
+        assert_eq!(
+            cons_list.to_string(),
+            "one, two, three"
+        );
     }
 
     #[test]
@@ -145,46 +156,83 @@ mod tests {
             cons(WrappedInt { i: 1 },
                  cons(WrappedInt { i: 2 },
                       cons(WrappedInt { i: 3 }, Nil)));
-        assert_eq!(cons_list.to_string(), "1, 2, 3");
+        assert_eq!(
+            cons_list.to_string(),
+            "1, 2, 3"
+        );
     }
 
     #[test]
     fn to_vector_for_empty_list() {
-        let nil: List<i32>= Nil;
         let expected: Vec<&i32> = vec![];
-        assert_eq!(nil.to_vector(), expected);
+        assert_eq!(
+            nil_int_list().to_vector(),
+            expected
+        );
     }
 
     #[test]
     fn to_vector_for_populated_list_i32() {
-        let cons_list = cons(1, cons(2, cons(3, Nil)));
-        assert_eq!(cons_list.to_vector(), vec![&1, &2, &3]);
+        assert_eq!(
+            example_int_list().to_vector(),
+            vec![&1, &2, &3]
+        );
     }
 
     #[test]
     fn map_for_empty_list() {
-        let nil: List<i32>= Nil;
-        assert_eq!(nil.map(|i:&i32| i + 1).to_string(), "");
+        assert_eq!(
+            nil_int_list().map(|i:&i32| i + 1).to_string(),
+            ""
+        );
     }
 
     #[test]
     fn map_for_populated_list_i32() {
-        let cons_list = cons(1, cons(2, cons(3, Nil)));
-        assert_eq!(cons_list.map(|i:&i32| i + 1).to_vector(), vec!(&2, &3, &4));
+        assert_eq!(
+            example_int_list().map(|i:&i32| i + 1).to_vector(),
+            vec!(&2, &3, &4)
+        );
+    }
+
+    fn add(i: &i32, j: i32) -> i32 {
+        return i + j
     }
 
     #[test]
     fn reduce_for_empty_list() {
-        let nil: List<i32>= Nil;
-        assert_eq!(nil.reduce(|i:&i32, j:&i32| i + j), None);
+        assert_eq!(
+            nil_int_list().reduce(add),
+            None
+        );
     }
 
     #[test]
     fn reduce_for_populated_list_i32() {
-        let cons_list = cons(1, cons(2, cons(3, Nil)));
-        let result = cons_list.reduce(|i: &i32, j: &i32| i + j);
-        let expected: Option<i32> = Some(6);
-        assert_eq!(result, expected);
+        assert_eq!(
+            example_int_list().reduce(add),
+            Some(6)
+        );
+    }
+
+    fn join_strings(i: &i32, s: String) -> String {
+        return format!("{}, {}", s, i);
+    }
+
+    #[test]
+    fn fold_for_empty_list() {
+        assert_eq!(
+            nil_int_list().fold(join_strings, "0".to_owned()),
+            "0"
+        );
+    }
+
+    #[test]
+    fn fold_for_populated_list_i32() {
+        assert_eq!(
+            example_int_list().fold(join_strings, "0".to_owned()),
+            "0, 1, 2, 3"
+        );
     }
 
 }
