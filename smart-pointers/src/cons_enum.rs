@@ -1,10 +1,11 @@
-use std::fmt::{Display, Formatter, Result};
+use std::fmt::{Display, Formatter, Result, Debug};
 use List::Cons;
 pub use List::Nil;
 
 // TODO - could add standard functional things like map, reduce, filter etc - maybe also an iterative foreach?
 
 /// Based on the implementation as defined in the exercise, using an enum
+#[derive(PartialEq)]
 pub enum List<T> {
     Cons(T, Box<List<T>>, usize),
     Nil,
@@ -27,6 +28,12 @@ impl<T: Display> Display for List<T> {
                 }
         };
         write!(f, "{}", string)
+    }
+}
+
+impl<T: Display> Debug for List<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "List with size {} (elements [{}])", &self.length(), &self)
     }
 }
 
@@ -57,10 +64,10 @@ impl<T> List<T> {
 
     fn map<R>(&self, f: fn(&T) -> R) -> List<R> {
         match &self {
-            Nil => Nil,
-            Cons(value, next, _) => {
+            Nil =>
+                Nil,
+            Cons(value, next, _) =>
                 cons(f(value), next.map(f))
-            }
         }
 
     }
@@ -85,6 +92,21 @@ impl<T: Clone> List<T> {
                 init,
             Cons(value, next, _) =>
                 next.fold(f, f(value, init))
+        }
+    }
+
+    /// Non-tail-recursive implementation of filter (as decided not to also scope reversing the list...)
+    fn filter(&self, f: fn(&T) -> bool) -> List<T> {
+        match &self {
+            Nil =>
+                Nil,
+            Cons(value, next, _) =>
+                if f(value) {
+                    cons(value.clone(), next.filter(f))
+                }
+                else {
+                    next.filter(f)
+                }
         }
     }
 
@@ -232,6 +254,26 @@ mod tests {
         assert_eq!(
             example_int_list().fold(join_strings, "0".to_owned()),
             "0, 1, 2, 3"
+        );
+    }
+
+    fn is_even(i: &i32) -> bool {
+        return i % 2 == 0
+    }
+
+    #[test]
+    fn filter_for_empty_list() {
+        assert_eq!(
+            nil_int_list().filter(is_even),
+            Nil
+        );
+    }
+
+    #[test]
+    fn filter_for_populated_list_i32() {
+        assert_eq!(
+            example_int_list().filter(is_even),
+            cons(2, Nil)
         );
     }
 
