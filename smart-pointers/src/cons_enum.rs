@@ -76,51 +76,42 @@ impl<T> List<T> {
 
 impl<T: Clone> List<T> {
 
+    fn fold_left<R, F: Fn(&T, R) -> R>(&self, f: F, init: R) -> R {
+        match self {
+            Nil =>
+                init,
+            Cons(value, next, _) => {
+                let result = f(value, init);
+                next.fold_left(f, result)
+            }
+        }
+    }
+
     fn reduce(&self, f: fn(&T, T) -> T) -> Option<T> {
         match &self {
             Nil =>
                 None,
             Cons(value, next, _) => {
-                Some(next.fold(f, value.clone()))
+                Some(next.fold_left(f, value.clone()))
             }
-        }
-    }
-
-    fn fold<R>(&self, f: fn(&T, R) -> R, init: R) -> R {
-        match self {
-            Nil =>
-                init,
-            Cons(value, next, _) =>
-                next.fold(f, f(value, init))
-        }
-    }
-
-    /// Non-tail-recursive implementation of filter (as decided not to also scope reversing the list...)
-    fn filter(&self, f: fn(&T) -> bool) -> List<T> {
-        match &self {
-            Nil =>
-                Nil,
-            Cons(value, next, _) =>
-                if f(value) {
-                    cons(value.clone(), next.filter(f))
-                }
-                else {
-                    next.filter(f)
-                }
         }
     }
 
     fn reverse(&self) -> List<T> {
-        fn inner<T: Clone>(remaining: &List<T>, processed: List<T>) -> List<T> {
-            match remaining {
-                Nil =>
-                    processed,
-                Cons(value, next, _) => {
-                    inner(next, cons(value.clone(), processed))
-                }
-            }
-        }
-        return inner(&self, Nil)
+        self.fold_left(
+            |value: &T, processed_list: List<T>| {
+                cons(value.clone(), processed_list)
+            },
+            Nil
+        )
+    }
+
+    fn filter(&self, f: fn(&T) -> bool) -> List<T> {
+        let prepend_if_matches = |value: &T, list: List<T>| {
+            if f(value) { cons(value.clone(), list) } else { list }
+        };
+        let prepended_list = self.fold_left(prepend_if_matches, Nil);
+        prepended_list.reverse()
     }
 
 }
@@ -257,7 +248,7 @@ mod tests {
     #[test]
     fn fold_for_empty_list() {
         assert_eq!(
-            nil_int_list().fold(join_strings, "0".to_owned()),
+            nil_int_list().fold_left(join_strings, "0".to_owned()),
             "0"
         );
     }
@@ -265,7 +256,7 @@ mod tests {
     #[test]
     fn fold_for_populated_list_i32() {
         assert_eq!(
-            example_int_list().fold(join_strings, "0".to_owned()),
+            example_int_list().fold_left(join_strings, "0".to_owned()),
             "0, 1, 2, 3"
         );
     }
