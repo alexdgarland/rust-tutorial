@@ -120,6 +120,16 @@ impl<T: Clone> List<T> {
         prepended_list.reverse()
     }
 
+    fn take(&self, n: usize) -> List<T> {
+        if n == 0 { return Nil };
+        match self {
+            Nil =>
+                Nil,
+            Cons(value, next, _) =>
+                cons(value.clone(), next.take(n-1))
+        }
+    }
+
 }
 
 /// Function to make cons'ing slicker (take care of the required boxing)

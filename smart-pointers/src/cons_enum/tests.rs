@@ -164,3 +164,27 @@ fn reverse_for_populated_list_i32() {
         cons(3, cons(2, cons(1, Nil)))
     );
 }
+
+#[test]
+fn take_for_empty_list() {
+    assert_eq!(
+        nil_int_list().take(2),
+        Nil
+    );
+}
+
+#[test]
+fn take_for_populated_list_i32() {
+    assert_eq!(
+        example_int_list().take(2),
+        cons(1, cons(2, Nil))
+    );
+}
+
+#[test]
+fn take_more_than_length_for_populated_list_i32() {
+    assert_eq!(
+        example_int_list().take(5),
+        cons(1, cons(2, cons(3, Nil)))
+    );
+}
