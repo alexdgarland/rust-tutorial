@@ -68,7 +68,7 @@ impl<T> List<T> {
         vector
     }
 
-    fn map<R>(&self, f: fn(&T) -> R) -> List<R> {
+    fn map<R, F: Fn(&T) -> R>(&self, f: F) -> List<R> {
         match &self {
             Nil =>
                 Nil,
@@ -93,7 +93,7 @@ impl<T: Clone> List<T> {
         }
     }
 
-    fn reduce(&self, f: fn(&T, T) -> T) -> Option<T> {
+    fn reduce<F: Fn(&T, T) -> T>(&self, f: F) -> Option<T> {
         match &self {
             Nil =>
                 None,
@@ -112,7 +112,7 @@ impl<T: Clone> List<T> {
         )
     }
 
-    fn filter(&self, f: fn(&T) -> bool) -> List<T> {
+    fn filter<F: Fn(&T) -> bool>(&self, f: F) -> List<T> {
         let prepend_if_matches = |value: &T, list: List<T>| {
             if f(value) { cons(value.clone(), list) } else { list }
         };
