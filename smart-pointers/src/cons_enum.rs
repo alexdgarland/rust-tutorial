@@ -134,6 +134,22 @@ impl<T: Clone> List<T> {
         return inner(n, &self, Nil).reverse()
     }
 
+    fn take_while<F: Fn(&T)-> bool>(&self, f: F) -> List<T> {
+        fn inner<TT: Clone, FF: Fn(&TT) -> bool>(
+            ff: FF, remaining: &List<TT>, processed: List<TT>
+        ) -> List<TT> {
+            return match remaining {
+                Cons(value, next, _) if ff(value)  => {
+                    let next_list = cons(value.clone(), processed);
+                    inner(ff, next, next_list)
+                }
+                _ =>
+                    processed
+            }
+        }
+        return inner(f, &self, Nil).reverse()
+    }
+
 }
 
 /// Function to make cons'ing slicker (take care of the required boxing)

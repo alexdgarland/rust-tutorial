@@ -188,3 +188,27 @@ fn take_more_than_length_for_populated_list_i32() {
         cons(1, cons(2, cons(3, Nil)))
     );
 }
+
+#[test]
+fn take_while_for_empty_list() {
+    assert_eq!(
+        nil_int_list().take_while(|i: &i32| *i < 3),
+        Nil
+    );
+}
+
+#[test]
+fn take_while_for_populated_list_i32() {
+    assert_eq!(
+        example_int_list().take_while(|i: &i32| *i < 3),
+        cons(1, cons(2, Nil))
+    );
+}
+
+#[test]
+fn take_while_more_than_length_for_populated_list_i32() {
+    assert_eq!(
+        example_int_list().take_while(|i: &i32| *i < 100),
+        cons(1, cons(2, cons(3, Nil)))
+    );
+}
