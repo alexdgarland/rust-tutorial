@@ -105,8 +105,8 @@ impl<T: Clone> List<T> {
 
     fn reverse(&self) -> List<T> {
         self.fold_left(
-            |value: &T, processed_list: List<T>| {
-                cons(value.clone(), processed_list)
+            |value: &T, reversed: List<T>| {
+                cons(value.clone(), reversed)
             },
             Nil
         )
@@ -121,13 +121,17 @@ impl<T: Clone> List<T> {
     }
 
     fn take(&self, n: usize) -> List<T> {
-        if n == 0 { return Nil };
-        match self {
-            Nil =>
-                Nil,
-            Cons(value, next, _) =>
-                cons(value.clone(), next.take(n-1))
+        fn inner<TT: Clone>(nn: usize, remaining: &List<TT>, processed: List<TT>) -> List<TT> {
+            return match remaining {
+                Cons(value, next, _) if nn > 0  => {
+                    let next_list = cons(value.clone(), processed);
+                    inner(nn - 1, next, next_list)
+                }
+                _ =>
+                    processed
+            }
         }
+        return inner(n, &self, Nil).reverse()
     }
 
 }
