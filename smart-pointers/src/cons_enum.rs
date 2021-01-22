@@ -65,16 +65,6 @@ impl<T> List<T> {
         vector
     }
 
-    fn map<R, F: Fn(&T) -> R>(&self, f: F) -> List<R> {
-        match &self {
-            Nil =>
-                Nil,
-            Cons(value, next, _) =>
-                cons(f(value), next.map(f))
-        }
-
-    }
-
 }
 
 impl<T: Clone> Clone for List<T> {
@@ -94,6 +84,14 @@ impl<T: Clone> List<T> {
                 next.fold_left(f, result)
             }
         }
+    }
+
+    fn map<R, F: Fn(&T) -> R>(&self, f: F) -> List<R> {
+        let add_new_value_to_list = |value: &T, mapped: List<R>| {
+            cons(f(value), mapped)
+        };
+        let init: List<R> = Nil;
+        self.reverse().fold_left(add_new_value_to_list, init)
     }
 
     fn reduce<F: Fn(&T, T) -> T>(&self, f: F) -> Option<T> {
@@ -116,8 +114,8 @@ impl<T: Clone> List<T> {
     }
 
     fn filter<F: Fn(&T) -> bool>(&self, f: F) -> List<T> {
-        let prepend_if_matches = |value: &T, list: List<T>| {
-            if f(value) { cons(value.clone(), list) } else { list }
+        let prepend_if_matches = |value: &T, filtered: List<T>| {
+            if f(value) { cons(value.clone(), filtered) } else { filtered }
         };
         let prepended_list = self.fold_left(prepend_if_matches, Nil);
         prepended_list.reverse()
@@ -180,9 +178,9 @@ pub fn cons<T>(value: T, list: List<T>) -> List<T> {
 }
 
 pub fn demo_enum() {
-    println!("***** Demoing enum implementation *****");
-    let list = cons(1, cons(2, cons(3, Nil)));
-    println!("{}", list)
+println!("***** Demoing enum implementation *****");
+let list = cons(1, cons(2, cons(3, Nil)));
+println!("{}", list)
 }
 
 #[cfg(test)]
