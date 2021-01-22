@@ -3,9 +3,6 @@ use List::Cons;
 pub use List::Nil;
 
 // TODO:
-//  - take
-//  - take_while
-//  - drop
 //  - drop_while
 //  - iterative foreach?
 //  - fold_right/ reduce_right?
@@ -80,6 +77,12 @@ impl<T> List<T> {
 
 }
 
+impl<T: Clone> Clone for List<T> {
+    fn clone(&self) -> Self {
+        return self.map(|value| value.clone())
+    }
+}
+
 impl<T: Clone> List<T> {
 
     fn fold_left<R, F: Fn(&T, R) -> R>(&self, f: F, init: R) -> R {
@@ -148,6 +151,24 @@ impl<T: Clone> List<T> {
             }
         }
         return inner(f, &self, Nil).reverse()
+    }
+
+    fn drop(&self, n: usize) -> List<T> {
+        fn inner<TT: Clone>(nn: usize, list: &List<TT>) -> List<TT> {
+            match list {
+                Nil =>
+                    Nil,
+                Cons(value, next, _) => {
+                    if nn <= 1 {
+                        (next as &List<TT>).clone()
+                    }
+                    else {
+                        inner(nn -1, next)
+                    }
+                }
+            }
+        }
+        return inner(n, self)
     }
 
 }

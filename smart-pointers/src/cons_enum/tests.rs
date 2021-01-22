@@ -89,6 +89,24 @@ fn map_for_populated_list_i32() {
     );
 }
 
+#[test]
+fn clone_for_empty_list() {
+    assert_eq!(
+        nil_int_list().clone(),
+        Nil
+    )
+}
+
+#[test]
+fn clone_for_populated_list_i32() {
+    let original = example_int_list();
+    let cloned = original.clone();
+    assert_eq!(cloned, original);
+    let original_pointer_address = format!("{:p}", &original);
+    let cloned_pointer_address = format!("{:p}", &cloned);
+    assert_ne!(original_pointer_address, cloned_pointer_address);
+}
+
 fn add(i: &i32, j: i32) -> i32 {
     return i + j
 }
@@ -210,5 +228,29 @@ fn take_while_more_than_length_for_populated_list_i32() {
     assert_eq!(
         example_int_list().take_while(|i: &i32| *i < 100),
         cons(1, cons(2, cons(3, Nil)))
+    );
+}
+
+#[test]
+fn drop_for_empty_list() {
+    assert_eq!(
+        nil_int_list().drop(2),
+        Nil
+    );
+}
+
+#[test]
+fn drop_for_populated_list_i32() {
+    assert_eq!(
+        example_int_list().drop(2),
+        cons(3, Nil)
+    );
+}
+
+#[test]
+fn drop_more_than_length_for_populated_list_i32() {
+    assert_eq!(
+        example_int_list().drop(5),
+        Nil
     );
 }
