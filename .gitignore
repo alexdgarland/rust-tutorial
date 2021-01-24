@@ -7,7 +7,8 @@
 
 hello_world/main
 
-# IDEA files for individual projects
+# IDEA files, including for individual projects
+.idea
 */.idea
 */*.iml
 
