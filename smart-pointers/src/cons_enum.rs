@@ -67,6 +67,19 @@ impl<T> List<T> {
 
 }
 
+fn cons_list_from_vector<T: Clone>(vec: Vec<T>) -> List<T> {
+    fn inner<TT: Clone>(remaining_slice: &[TT], processed_list: List<TT>) -> List<TT> {
+        return match remaining_slice.split_last() {
+            None =>
+                processed_list,
+            Some((last, init)) => {
+                inner(init, cons(last.clone(), processed_list))
+            }
+        };
+    }
+    inner(&vec[..], Nil)
+}
+
 impl<T: Clone> Clone for List<T> {
     fn clone(&self) -> Self {
         return self.map(|value| value.clone())
@@ -168,6 +181,22 @@ impl<T: Clone> List<T> {
         }
         return inner(n, self)
     }
+
+    // TODO - big question here of whether we want to do one or both (as separate methods) of:
+    //  - Return a reference to the sub-list, which nicely follows functional data-sharing behaviour
+    //      and is very simple to implement in terms of the recursion,
+    //      but due to Rust being non-garbage-collected will require significant care around lifetimes
+    //  - Implement a copy/ clone of the sub-list - this makes more sense in terms of rust memory management (?)
+    //      but makes the recursion more complex - could maybe make use of one of the following:
+    //          - auto-derived clone behaviour (but would require a bound of List<T: Clone>
+    //          - own implementation of either Clone or via (slightly hackily?) to-from vector methods??
+    //          - completely fresh code?
+    // fn drop_while<F: Fn(&T)-> bool>(&self, f: F) -> List<T> {
+    //     fn inner<F: Fn(&T)-> bool, TT>(ff: FF, list: &List<TT>) -> List<TT> {
+    //
+    //     }
+    //     inner(f, &self).clone()
+    // }
 
 }
 

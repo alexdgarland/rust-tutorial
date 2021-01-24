@@ -1,12 +1,13 @@
 use super::{List, cons, Nil};
 use crate::test_helpers::WrappedInt;
+use crate::cons_enum::cons_list_from_vector;
 
 fn nil_int_list() -> List<i32> {
     Nil
 }
 
 fn example_int_list() -> List<i32> {
-    cons(1, cons(2, cons(3, Nil)))
+    cons_list_from_vector(vec ![1, 2, 3])
 }
 
 #[test]
@@ -71,6 +72,21 @@ fn to_vector_for_populated_list_i32() {
         example_int_list().to_vector(),
         vec![&1, &2, &3]
     );
+}
+
+#[test]
+fn from_empty_vector_i32() {
+    let vector: Vec<i32> = vec![];
+    let list = cons_list_from_vector(vector);
+    assert_eq!(list, Nil);
+}
+
+#[test]
+fn from_populated_vector_i32() {
+    let expected_list = cons(1, cons(2, cons(3,  Nil)));
+    let actual_list = cons_list_from_vector(vec![1, 2, 3]);
+    assert_eq!(actual_list, expected_list);
+
 }
 
 #[test]
@@ -253,4 +269,37 @@ fn drop_more_than_length_for_populated_list_i32() {
         example_int_list().drop(5),
         Nil
     );
+}
+
+#[test]
+fn drop_while_for_empty_list() {
+    assert_eq!(
+        nil_int_list().drop_while(is_even),
+        Nil
+    );
+}
+
+#[test]
+fn drop_while_for_populated_list_i32() {
+    let list = cons_list_from_vector(vec![2, 4, 6, 1, 8, 10, 12]);
+    assert_eq!(
+        example_int_list().drop_while(is_even),
+        cons_list_from_vector(vec![1, 8, 10, 12])
+    );
+}
+
+#[test]
+fn drop_while_condition_always_applies_for_populated_list_i32() {
+    // assert_eq!(
+    //     example_int_list().drop(5),
+    //     Nil
+    // );
+}
+
+#[test]
+fn drop_while_condition_never_applies_for_populated_list_i32() {
+    // assert_eq!(
+    //     example_int_list().drop(5),
+    //     Nil
+    // );
 }
