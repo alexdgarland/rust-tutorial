@@ -283,23 +283,39 @@ fn drop_while_for_empty_list() {
 fn drop_while_for_populated_list_i32() {
     let list = cons_list_from_vector(vec![2, 4, 6, 1, 8, 10, 12]);
     assert_eq!(
-        example_int_list().drop_while(is_even),
+        list.drop_while(is_even),
         cons_list_from_vector(vec![1, 8, 10, 12])
     );
 }
 
 #[test]
 fn drop_while_condition_always_applies_for_populated_list_i32() {
-    // assert_eq!(
-    //     example_int_list().drop(5),
-    //     Nil
-    // );
+    let list = cons_list_from_vector(vec![2, 4, 6, 8, 10, 12]);
+    assert_eq!(
+        list.drop_while(is_even),
+        Nil
+    );
 }
 
 #[test]
 fn drop_while_condition_never_applies_for_populated_list_i32() {
-    // assert_eq!(
-    //     example_int_list().drop(5),
-    //     Nil
-    // );
+    let list = cons_list_from_vector(vec![1, 3, 5, 7, 9, 11]);
+    assert_eq!(
+        list.drop_while(is_even),
+        list
+    );
+}
+
+#[test]
+fn for_each_can_use_closure_to_add_to_vector_from_list_i32() {
+    let mut vector: Vec<i32> = vec![];
+    let list = example_int_list();
+
+    list.for_each(
+        |el| {
+            vector.push(el.clone())
+        }
+    );
+
+    assert_eq!(vector, vec![1, 2, 3])
 }

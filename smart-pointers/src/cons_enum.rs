@@ -3,8 +3,6 @@ use List::Cons;
 pub use List::Nil;
 
 // TODO:
-//  - drop_while
-//  - iterative foreach?
 //  - fold_right/ reduce_right?
 
 /// Based on the implementation as defined in the exercise, using an enum
@@ -19,7 +17,7 @@ impl<T: Display> Display for List<T> {
         let string = match self {
             Nil =>
                 "".to_string(),
-            Cons(value, boxed_list, _) =>
+            Cons(value, boxed_list, _size) =>
                 {
                     let next = match &**boxed_list {
                         Nil =>
@@ -40,6 +38,7 @@ impl<T: Display> Debug for List<T> {
     }
 }
 
+#[allow(dead_code)]
 impl<T> List<T> {
 
     fn length(&self) -> usize {
@@ -56,7 +55,7 @@ impl<T> List<T> {
         let mut vector: Vec<&T> = Vec::with_capacity(length);
         let mut current_list: &List<T> = &self;
         for _ in 0..length {
-            if let Cons(value, next, _) = &current_list
+            if let Cons(value, next, _size) = &current_list
             {
                 vector.push(value.clone());
                 current_list = next;
@@ -65,8 +64,16 @@ impl<T> List<T> {
         vector
     }
 
+    fn for_each<F: FnMut(&T) -> ()>(&self, mut f: F) {
+        if let Cons(value, next, _size) = self {
+            f(value);
+            next.for_each(f);
+        }
+    }
+
 }
 
+#[allow(dead_code)]
 fn cons_list_from_vector<T: Clone>(vec: Vec<T>) -> List<T> {
     fn inner<TT: Clone>(remaining_slice: &[TT], processed_list: List<TT>) -> List<TT> {
         return match remaining_slice.split_last() {
@@ -86,13 +93,14 @@ impl<T: Clone> Clone for List<T> {
     }
 }
 
+#[allow(dead_code)]
 impl<T: Clone> List<T> {
 
     fn fold_left<R, F: Fn(&T, R) -> R>(&self, f: F, init: R) -> R {
         match self {
             Nil =>
                 init,
-            Cons(value, next, _) => {
+            Cons(value, next, _size) => {
                 let result = f(value, init);
                 next.fold_left(f, result)
             }
@@ -111,7 +119,7 @@ impl<T: Clone> List<T> {
         match &self {
             Nil =>
                 None,
-            Cons(value, next, _) => {
+            Cons(value, next, _size) => {
                 Some(next.fold_left(f, value.clone()))
             }
         }
@@ -137,7 +145,7 @@ impl<T: Clone> List<T> {
     fn take(&self, n: usize) -> List<T> {
         fn inner<TT: Clone>(nn: usize, remaining: &List<TT>, processed: List<TT>) -> List<TT> {
             return match remaining {
-                Cons(value, next, _) if nn > 0  => {
+                Cons(value, next, _size) if nn > 0  => {
                     let next_list = cons(value.clone(), processed);
                     inner(nn - 1, next, next_list)
                 }
@@ -153,7 +161,7 @@ impl<T: Clone> List<T> {
             ff: FF, remaining: &List<TT>, processed: List<TT>
         ) -> List<TT> {
             return match remaining {
-                Cons(value, next, _) if ff(value)  => {
+                Cons(value, next, _size) if ff(value)  => {
                     let next_list = cons(value.clone(), processed);
                     inner(ff, next, next_list)
                 }
@@ -169,7 +177,7 @@ impl<T: Clone> List<T> {
             match list {
                 Nil =>
                     Nil,
-                Cons(value, next, _) => {
+                Cons(_value, next, _size) => {
                     if nn <= 1 {
                         (next as &List<TT>).clone()
                     }
@@ -182,21 +190,19 @@ impl<T: Clone> List<T> {
         return inner(n, self)
     }
 
-    // TODO - big question here of whether we want to do one or both (as separate methods) of:
-    //  - Return a reference to the sub-list, which nicely follows functional data-sharing behaviour
-    //      and is very simple to implement in terms of the recursion,
-    //      but due to Rust being non-garbage-collected will require significant care around lifetimes
-    //  - Implement a copy/ clone of the sub-list - this makes more sense in terms of rust memory management (?)
-    //      but makes the recursion more complex - could maybe make use of one of the following:
-    //          - auto-derived clone behaviour (but would require a bound of List<T: Clone>
-    //          - own implementation of either Clone or via (slightly hackily?) to-from vector methods??
-    //          - completely fresh code?
-    // fn drop_while<F: Fn(&T)-> bool>(&self, f: F) -> List<T> {
-    //     fn inner<F: Fn(&T)-> bool, TT>(ff: FF, list: &List<TT>) -> List<TT> {
-    //
-    //     }
-    //     inner(f, &self).clone()
-    // }
+    fn drop_while<F: Fn(&T)-> bool>(&self, f: F) -> List<T> {
+        fn inner<FF: Fn(&TT)-> bool, TT>(ff: FF, list: &List<TT>) -> &List<TT> {
+            match list {
+                Cons(value, next, _size) => {
+                    if ff(value) { inner(ff, next) }
+                    else { list }
+                },
+                Nil =>
+                    &Nil
+            }
+        }
+        inner(f, &self).clone()
+    }
 
 }
 
