@@ -2,8 +2,43 @@ use std::fmt::{Display, Formatter, Result, Debug};
 use List::Cons;
 pub use List::Nil;
 
+/*
+
+    NOTE - this is (I hope obviously!) a learning exercise, not a usable library.
+
+    In particular, it is apparently not guaranteed that Rust will perform tail call optimisation reliably,
+    hence use of tail-recursive functions is an intellectual exercise rather than a guarantee of good performance.
+
+    Particularly unsure if recursive calls to struct-/ enum-attached like the following will see tail-call elimination.
+    It seems they *could* but would need research/ experimentation to validate, which I probably won't take time to do!:
+
+    fn recursive_method(&self, args) {
+        if (base_case) {
+            return some_non_recursive_value;
+        }
+        else {
+            let new_args = do_something_to(args);
+            // This seems like can pass all the info it needs through without holding a stack frame,
+            // but not 100% clear  if reference to "self" will be properly  discarded by compiler
+            // in favour of just working off of "next".
+            return self.next.recursive_method(new_args);
+        }
+    }
+
+ */
+
+
 // TODO:
 //  - fold_right/ reduce_right?
+//  Following Scala conventions the signatures would be like:
+// def foldLeft[B](z: B)(op: (B, A) => B): B
+// Applies a binary operator to a start value and all elements of this list, going left to right.
+//
+// final def foldRight[B](z: B)(op: (A, B) => B): B
+// Applies a binary operator to all elements of this list and a start value, going right to left.
+//
+// i.e. assumes that the way closure params are set up
+// matches the direction we are moving through the list
 
 /// Based on the implementation as defined in the exercise, using an enum
 #[derive(PartialEq)]
