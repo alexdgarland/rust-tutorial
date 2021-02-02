@@ -1,6 +1,7 @@
 use super::{List, cons, Nil};
 use crate::test_helpers::WrappedInt;
 use crate::cons_enum::cons_list_from_vector;
+use std::fmt::Display;
 
 fn nil_int_list() -> List<i32> {
     Nil
@@ -8,6 +9,30 @@ fn nil_int_list() -> List<i32> {
 
 fn example_int_list() -> List<i32> {
     cons_list_from_vector(vec ![1, 2, 3])
+}
+
+fn nil_string_list() -> List<String> {
+    Nil
+}
+
+fn example_string_list() -> List<String> {
+    cons_list_from_vector(vec !["ONE".to_owned(), "TWO".to_owned(), "THREE".to_owned()])
+}
+
+fn is_even(i: &i32) -> bool {
+    return i % 2 == 0
+}
+
+fn add(accumulator: i32, value: &i32) -> i32 {
+    return accumulator + value
+}
+
+fn join_to_string_from_left<T: Display>(accumulator: String, value: &T) -> String {
+    return format!("{}, {}", accumulator, value);
+}
+
+fn join_to_string_from_right<T: Display>(value: &T, accumulator: String) -> String {
+    return format!("{}, {}", value, accumulator);
 }
 
 #[test]
@@ -86,13 +111,12 @@ fn from_populated_vector_i32() {
     let expected_list = cons(1, cons(2, cons(3,  Nil)));
     let actual_list = cons_list_from_vector(vec![1, 2, 3]);
     assert_eq!(actual_list, expected_list);
-
 }
 
 #[test]
 fn map_for_empty_list() {
     assert_eq!(
-        nil_int_list().map(|i:&i32| i + 1).to_string(),
+        nil_int_list().map(&|i:&i32| i + 1).to_string(),
         ""
     );
 }
@@ -100,7 +124,7 @@ fn map_for_empty_list() {
 #[test]
 fn map_for_populated_list_i32() {
     assert_eq!(
-        example_int_list().map(|i:&i32| i + 1).to_vector(),
+        example_int_list().map(&|i:&i32| i + 1).to_vector(),
         vec!(&2, &3, &4)
     );
 }
@@ -123,54 +147,74 @@ fn clone_for_populated_list_i32() {
     assert_ne!(original_pointer_address, cloned_pointer_address);
 }
 
-fn add(accumulator: i32, value: &i32) -> i32 {
-    return accumulator + value
-}
-
 #[test]
-fn reduce_for_empty_list() {
+fn fold_left_for_empty_list() {
     assert_eq!(
-        nil_int_list().reduce_left(add),
-        None
-    );
-}
-
-#[test]
-fn reduce_for_populated_list_i32() {
-    assert_eq!(
-        example_int_list().reduce_left(add),
-        Some(6)
-    );
-}
-
-fn join_strings(s: String, i: &i32) -> String {
-    return format!("{}, {}", s, i);
-}
-
-#[test]
-fn fold_for_empty_list() {
-    assert_eq!(
-        nil_int_list().fold_left("0".to_owned(), join_strings),
+        nil_int_list().fold_left("0".to_owned(), &join_to_string_from_left),
         "0"
     );
 }
 
 #[test]
-fn fold_for_populated_list_i32() {
+fn fold_left_for_populated_list_i32() {
     assert_eq!(
-        example_int_list().fold_left("0".to_owned(), join_strings),
-        "0, 1, 2, 3"
+        example_int_list().fold_left("START".to_owned(), &join_to_string_from_left),
+        "START, 1, 2, 3"
     );
 }
 
-fn is_even(i: &i32) -> bool {
-    return i % 2 == 0
+#[test]
+fn reduce_left_for_empty_list() {
+    assert_eq!(
+        nil_string_list().reduce_left(&join_to_string_from_left),
+        None
+    );
+}
+
+#[test]
+fn reduce_left_for_populated_list_string() {
+    assert_eq!(
+        example_string_list().reduce_left(&join_to_string_from_left),
+        Some("ONE, TWO, THREE".to_owned())
+    );
+}
+
+#[test]
+fn fold_right_for_empty_list() {
+    assert_eq!(
+        nil_int_list().fold_right("0".to_owned(), &join_to_string_from_right),
+        "0"
+    );
+}
+
+#[test]
+fn fold_right_for_populated_list_i32() {
+    assert_eq!(
+        example_int_list().fold_right("END".to_owned(), &join_to_string_from_right),
+        "1, 2, 3, END"
+    );
+}
+
+#[test]
+fn reduce_right_for_empty_list() {
+    assert_eq!(
+        nil_string_list().reduce_right(&join_to_string_from_right),
+        None
+    );
+}
+
+#[test]
+fn reduce_right_for_populated_list_string() {
+    assert_eq!(
+        example_string_list().reduce_right(&join_to_string_from_right),
+        Some("ONE, TWO, THREE".to_owned())
+    );
 }
 
 #[test]
 fn filter_for_empty_list() {
     assert_eq!(
-        nil_int_list().filter(is_even),
+        nil_int_list().filter(&is_even),
         Nil
     );
 }
@@ -178,7 +222,7 @@ fn filter_for_empty_list() {
 #[test]
 fn filter_for_populated_list_i32() {
     assert_eq!(
-        example_int_list().filter(is_even),
+        example_int_list().filter(&is_even),
         cons(2, Nil)
     );
 }
@@ -226,7 +270,7 @@ fn take_more_than_length_for_populated_list_i32() {
 #[test]
 fn take_while_for_empty_list() {
     assert_eq!(
-        nil_int_list().take_while(|i: &i32| *i < 3),
+        nil_int_list().take_while(&|i: &i32| *i < 3),
         Nil
     );
 }
@@ -234,7 +278,7 @@ fn take_while_for_empty_list() {
 #[test]
 fn take_while_for_populated_list_i32() {
     assert_eq!(
-        example_int_list().take_while(|i: &i32| *i < 3),
+        example_int_list().take_while(&|i: &i32| *i < 3),
         cons(1, cons(2, Nil))
     );
 }
@@ -242,7 +286,7 @@ fn take_while_for_populated_list_i32() {
 #[test]
 fn take_while_more_than_length_for_populated_list_i32() {
     assert_eq!(
-        example_int_list().take_while(|i: &i32| *i < 100),
+        example_int_list().take_while(&|i: &i32| *i < 100),
         cons(1, cons(2, cons(3, Nil)))
     );
 }
@@ -274,7 +318,7 @@ fn drop_more_than_length_for_populated_list_i32() {
 #[test]
 fn drop_while_for_empty_list() {
     assert_eq!(
-        nil_int_list().drop_while(is_even),
+        nil_int_list().drop_while(&is_even),
         Nil
     );
 }
@@ -283,7 +327,7 @@ fn drop_while_for_empty_list() {
 fn drop_while_for_populated_list_i32() {
     let list = cons_list_from_vector(vec![2, 4, 6, 1, 8, 10, 12]);
     assert_eq!(
-        list.drop_while(is_even),
+        list.drop_while(&is_even),
         cons_list_from_vector(vec![1, 8, 10, 12])
     );
 }
@@ -292,7 +336,7 @@ fn drop_while_for_populated_list_i32() {
 fn drop_while_condition_always_applies_for_populated_list_i32() {
     let list = cons_list_from_vector(vec![2, 4, 6, 8, 10, 12]);
     assert_eq!(
-        list.drop_while(is_even),
+        list.drop_while(&is_even),
         Nil
     );
 }
@@ -301,7 +345,7 @@ fn drop_while_condition_always_applies_for_populated_list_i32() {
 fn drop_while_condition_never_applies_for_populated_list_i32() {
     let list = cons_list_from_vector(vec![1, 3, 5, 7, 9, 11]);
     assert_eq!(
-        list.drop_while(is_even),
+        list.drop_while(&is_even),
         list
     );
 }

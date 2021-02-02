@@ -27,19 +27,6 @@ pub use List::Nil;
 
  */
 
-
-// TODO:
-//  - fold_right/ reduce_right?
-//  Following Scala conventions the signatures would be like:
-// def foldLeft[B](z: B)(op: (B, A) => B): B
-// Applies a binary operator to a start value and all elements of this list, going left to right.
-//
-// final def foldRight[B](z: B)(op: (A, B) => B): B
-// Applies a binary operator to all elements of this list and a start value, going right to left.
-//
-// i.e. assumes that the way closure params are set up
-// matches the direction we are moving through the list
-
 /// Based on the implementation as defined in the exercise, using an enum
 #[derive(PartialEq)]
 pub enum List<T> {
@@ -124,14 +111,14 @@ fn cons_list_from_vector<T: Clone>(vec: Vec<T>) -> List<T> {
 
 impl<T: Clone> Clone for List<T> {
     fn clone(&self) -> Self {
-        return self.map(|value| value.clone())
+        return self.map(&|value| value.clone())
     }
 }
 
 #[allow(dead_code)]
 impl<T: Clone> List<T> {
 
-    fn fold_left<R, F: Fn(R, &T) -> R>(&self, init: R, f: F) -> R {
+    fn fold_left<R, F: Fn(R, &T) -> R>(&self, init: R, f: &F) -> R {
         match self {
             Nil =>
                 init,
@@ -142,15 +129,26 @@ impl<T: Clone> List<T> {
         }
     }
 
-    fn map<R, F: Fn(&T) -> R>(&self, f: F) -> List<R> {
+    // It is not possible to implement fold_right using tail recursion
+    fn fold_right<R, F: Fn(&T, R) -> R>(&self, init: R, f: &F) -> R {
+        match self {
+            Nil =>
+                init,
+            Cons(value, next, _size) => {
+                f(value, next.fold_right(init, f))
+            }
+        }
+    }
+
+    fn map<R, F: Fn(&T) -> R>(&self, f: &F) -> List<R> {
         let add_new_value_to_list = |mapped: List<R>, value: &T| {
             cons(f(value), mapped)
         };
         let init: List<R> = Nil;
-        self.reverse().fold_left(init, add_new_value_to_list)
+        self.reverse().fold_left(init, &add_new_value_to_list)
     }
 
-    fn reduce_left<F: Fn(T, &T) -> T>(&self, f: F) -> Option<T> {
+    fn reduce_left<F: Fn(T, &T) -> T>(&self, f: &F) -> Option<T> {
         match &self {
             Nil =>
                 None,
@@ -160,20 +158,26 @@ impl<T: Clone> List<T> {
         }
     }
 
+    fn reduce_right<F: Fn(&T, T) -> T>(&self, f: &F) -> Option<T> {
+        self
+            .reverse()
+            .reduce_left(&|accumulator: T, value: &T| f(value, accumulator))
+    }
+
     fn reverse(&self) -> List<T> {
         self.fold_left(
             Nil,
-            |reversed: List<T>, value: &T| {
+            &|reversed: List<T>, value: &T| {
                 cons(value.clone(), reversed)
             }
         )
     }
 
-    fn filter<F: Fn(&T) -> bool>(&self, f: F) -> List<T> {
+    fn filter<F: Fn(&T) -> bool>(&self, f: &F) -> List<T> {
         let prepend_if_matches = |filtered: List<T>, value: &T| {
             if f(value) { cons(value.clone(), filtered) } else { filtered }
         };
-        let prepended_list = self.fold_left(Nil, prepend_if_matches);
+        let prepended_list = self.fold_left(Nil, &prepend_if_matches);
         prepended_list.reverse()
     }
 
@@ -191,7 +195,7 @@ impl<T: Clone> List<T> {
         return inner(n, &self, Nil).reverse()
     }
 
-    fn take_while<F: Fn(&T)-> bool>(&self, f: F) -> List<T> {
+    fn take_while<F: Fn(&T)-> bool>(&self, f: &F) -> List<T> {
         fn inner<TT: Clone, FF: Fn(&TT) -> bool>(
             ff: FF, remaining: &List<TT>, processed: List<TT>
         ) -> List<TT> {
@@ -225,8 +229,8 @@ impl<T: Clone> List<T> {
         return inner(n, self)
     }
 
-    fn drop_while<F: Fn(&T)-> bool>(&self, f: F) -> List<T> {
-        fn inner<FF: Fn(&TT)-> bool, TT>(ff: FF, list: &List<TT>) -> &List<TT> {
+    fn drop_while<F: Fn(&T)->bool>(&self, f: &F) -> List<T> {
+        fn inner<FF: Fn(&TT)->bool, TT>(ff: FF, list: &List<TT>) -> &List<TT> {
             match list {
                 Cons(value, next, _size) => {
                     if ff(value) { inner(ff, next) }
