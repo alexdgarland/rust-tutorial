@@ -131,49 +131,49 @@ impl<T: Clone> Clone for List<T> {
 #[allow(dead_code)]
 impl<T: Clone> List<T> {
 
-    fn fold_left<R, F: Fn(&T, R) -> R>(&self, f: F, init: R) -> R {
+    fn fold_left<R, F: Fn(R, &T) -> R>(&self, init: R, f: F) -> R {
         match self {
             Nil =>
                 init,
             Cons(value, next, _size) => {
-                let result = f(value, init);
-                next.fold_left(f, result)
+                let result = f(init, value);
+                next.fold_left(result, f)
             }
         }
     }
 
     fn map<R, F: Fn(&T) -> R>(&self, f: F) -> List<R> {
-        let add_new_value_to_list = |value: &T, mapped: List<R>| {
+        let add_new_value_to_list = |mapped: List<R>, value: &T| {
             cons(f(value), mapped)
         };
         let init: List<R> = Nil;
-        self.reverse().fold_left(add_new_value_to_list, init)
+        self.reverse().fold_left(init, add_new_value_to_list)
     }
 
-    fn reduce<F: Fn(&T, T) -> T>(&self, f: F) -> Option<T> {
+    fn reduce_left<F: Fn(T, &T) -> T>(&self, f: F) -> Option<T> {
         match &self {
             Nil =>
                 None,
             Cons(value, next, _size) => {
-                Some(next.fold_left(f, value.clone()))
+                Some(next.fold_left(value.clone(), f))
             }
         }
     }
 
     fn reverse(&self) -> List<T> {
         self.fold_left(
-            |value: &T, reversed: List<T>| {
+            Nil,
+            |reversed: List<T>, value: &T| {
                 cons(value.clone(), reversed)
-            },
-            Nil
+            }
         )
     }
 
     fn filter<F: Fn(&T) -> bool>(&self, f: F) -> List<T> {
-        let prepend_if_matches = |value: &T, filtered: List<T>| {
+        let prepend_if_matches = |filtered: List<T>, value: &T| {
             if f(value) { cons(value.clone(), filtered) } else { filtered }
         };
-        let prepended_list = self.fold_left(prepend_if_matches, Nil);
+        let prepended_list = self.fold_left(Nil, prepend_if_matches);
         prepended_list.reverse()
     }
 

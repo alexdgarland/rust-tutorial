@@ -123,14 +123,14 @@ fn clone_for_populated_list_i32() {
     assert_ne!(original_pointer_address, cloned_pointer_address);
 }
 
-fn add(i: &i32, j: i32) -> i32 {
-    return i + j
+fn add(accumulator: i32, value: &i32) -> i32 {
+    return accumulator + value
 }
 
 #[test]
 fn reduce_for_empty_list() {
     assert_eq!(
-        nil_int_list().reduce(add),
+        nil_int_list().reduce_left(add),
         None
     );
 }
@@ -138,19 +138,19 @@ fn reduce_for_empty_list() {
 #[test]
 fn reduce_for_populated_list_i32() {
     assert_eq!(
-        example_int_list().reduce(add),
+        example_int_list().reduce_left(add),
         Some(6)
     );
 }
 
-fn join_strings(i: &i32, s: String) -> String {
+fn join_strings(s: String, i: &i32) -> String {
     return format!("{}, {}", s, i);
 }
 
 #[test]
 fn fold_for_empty_list() {
     assert_eq!(
-        nil_int_list().fold_left(join_strings, "0".to_owned()),
+        nil_int_list().fold_left("0".to_owned(), join_strings),
         "0"
     );
 }
@@ -158,7 +158,7 @@ fn fold_for_empty_list() {
 #[test]
 fn fold_for_populated_list_i32() {
     assert_eq!(
-        example_int_list().fold_left(join_strings, "0".to_owned()),
+        example_int_list().fold_left("0".to_owned(), join_strings),
         "0, 1, 2, 3"
     );
 }
