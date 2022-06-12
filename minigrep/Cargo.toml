@@ -10,3 +10,4 @@ edition = "2018"
 # Test dependencies
 mockall = "0.7.1"
 mockall_derive = "0.7.1"
+regex = "1.5.6"
